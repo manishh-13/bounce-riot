@@ -4,7 +4,7 @@
 
 Open the game on a TV browser or computer, host a room, and let friends scan the QR code. Everyone sees the same arena. Hold to charge a slam, release to send a wave through the floor, and hop onto a rival's wave to turn it against them.
 
-![Bounce Riot gameplay](docs/gameplay.png)
+![Bounce Riot TV presentation](docs/gameplay.png)
 
 ## Play
 
@@ -58,6 +58,8 @@ npm run build
 npx playwright install chromium
 npm run test:e2e
 ```
+
+The TV presentation checks cover all three arenas, low and high graphics, shader compilation, and an eight-player scoreboard at 720p and 1080p. To capture matching visual fixtures, run `node scripts/visual-check.mjs current` while Vite is running; PNGs and draw-call statistics are written to the ignored `.artifacts/polish/current/` folder. These are staged rendering fixtures, not a physical-TV benchmark.
 
 On macOS the browser tests use an existing Google Chrome installation by default. Set `CHROME_PATH` to choose a different executable. In CI, Playwright's Chromium is installed. Tests cover deterministic simulation and room-service rules, plus browser gameplay, actual direct controller pairing, relay fallback, captain start, reconnect and rematch.
 

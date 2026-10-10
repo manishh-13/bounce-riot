@@ -1,4 +1,4 @@
-import { CanvasTexture, LinearFilter, SRGBColorSpace } from 'three';
+import { CanvasTexture, Color, LinearFilter, SRGBColorSpace } from 'three';
 
 const W = 320, H = 96;
 const FONT = "'Fredoka', 'Nunito Sans', ui-rounded, system-ui, sans-serif";
@@ -62,22 +62,24 @@ function draw(spec: BadgeSpec): CanvasTexture {
   const x = (W - pillW) / 2, y = 14, h = 62;
 
   ctx.globalAlpha = spec.offline ? 0.55 : 1;
-  ctx.fillStyle = 'rgba(60,40,30,0.22)';
+  ctx.fillStyle = 'rgba(22,52,42,0.45)';
   roundRect(ctx, x + 2, y + 6, pillW, h, h / 2); ctx.fill();
   ctx.fillStyle = '#fffaf0';
   roundRect(ctx, x, y, pillW, h, h / 2); ctx.fill();
-  ctx.lineWidth = 5; ctx.strokeStyle = spec.color;
+  ctx.lineWidth = 6; ctx.strokeStyle = spec.color;
   roundRect(ctx, x + 2.5, y + 2.5, pillW - 5, h - 5, (h - 5) / 2); ctx.stroke();
 
   const cx = x + h / 2, cy = y + h / 2;
   ctx.fillStyle = spec.color;
   ctx.beginPath(); ctx.arc(cx, cy, h / 2 - 7, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = '#ffffff';
+  const color = new Color(spec.color);
+  const luminance = 0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b;
+  ctx.fillStyle = luminance > 0.3 ? '#173b31' : '#fffaf0';
   ctx.font = `700 30px ${FONT}`;
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.fillText(spec.bot ? 'B' : String(spec.number), cx, cy + 2);
 
-  ctx.fillStyle = '#3b2f2a';
+  ctx.fillStyle = '#173b31';
   ctx.font = `700 34px ${FONT}`;
   ctx.textAlign = 'left';
   ctx.fillText(name, x + h + 6, cy + 2, textW);

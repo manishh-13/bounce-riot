@@ -45,7 +45,7 @@ const P_FRAG = /* glsl */`
       vec2 q = abs(p);
       float star = max(1.0 - smoothstep(0.08, 0.2, q.x) * 1.0 - q.y * 0.9, 1.0 - smoothstep(0.08, 0.2, q.y) - q.x * 0.9);
       a = clamp(star, 0.0, 1.0);
-      col = mix(vColor, vec3(1.0), 0.5);
+      col = mix(vColor, vec3(1.0), 0.2);
     }
     a *= vAlpha;
     if (a < 0.02) discard;

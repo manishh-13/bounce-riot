@@ -87,7 +87,7 @@ export class ArenaScene {
     const r = this.renderer;
     r.outputColorSpace = SRGBColorSpace;
     r.toneMapping = NeutralToneMapping;
-    r.toneMappingExposure = 1.02;
+    r.toneMappingExposure = 0.96;
     r.setClearColor(PAGE_BG, 0);
     r.shadowMap.type = PCFSoftShadowMap;
     const canvas = r.domElement;
@@ -100,9 +100,10 @@ export class ArenaScene {
     container.appendChild(canvas);
 
     this.scene.fog = new Fog(PAGE_BG, 30, 62);
-    const hemi = new HemisphereLight('#fff3df', '#9cc9b9', 1.55);
-    const ambient = new AmbientLight('#ffffff', 0.25);
-    this.key = new DirectionalLight('#fff0d6', 2.7);
+    // A directional toy-studio look: less flat fill preserves colour on a bright TV.
+    const hemi = new HemisphereLight('#fff6e8', '#518f80', 0.95);
+    const ambient = new AmbientLight('#fff6e8', 0.12);
+    this.key = new DirectionalLight('#fff6ea', 2.65);
     this.key.position.set(-6, 15, 9);
     this.key.target.position.set(0, 0, 0);
     const cam = this.key.shadow.camera;
@@ -110,7 +111,7 @@ export class ArenaScene {
     this.key.shadow.bias = -0.0006;
     this.key.shadow.normalBias = 0.03;
     this.key.shadow.radius = 3;
-    const fill = new DirectionalLight('#c9dcff', 0.55);
+    const fill = new DirectionalLight('#cce9ff', 0.7);
     fill.position.set(9, 6, -8);
     this.scene.add(hemi, ambient, this.key, this.key.target, fill);
 
@@ -434,7 +435,7 @@ export class ArenaScene {
         if (!low) emit({ x: e.x, y, z: e.z, count: 5, color: '#fffaf0', speed: 1.4, up: 0.6, size: 0.3, life: 0.45, gravity: 1, shape: 0, ring: true, spread: 0.3 });
         break;
       case 'slam':
-        emit({ x: e.x, y, z: e.z, count: 10 + 8 * power, color: '#fffaf0', color2: color, speed: 3.5 + power, up: 1.2, size: 0.45, life: 0.6, gravity: 2, shape: 0, ring: true, spread: 0.5 });
+        emit({ x: e.x, y, z: e.z, count: 10 + 8 * power, color, color2: '#fff4d7', speed: 3.5 + power, up: 1.2, size: 0.38, life: 0.6, gravity: 2, shape: 0, ring: true, spread: 0.5 });
         emit({ x: e.x, y: y + 0.2, z: e.z, count: 6 * power, color, color2: '#ffe08a', speed: 2, up: 4, size: 0.22, life: 0.8, gravity: 9, shape: 2, drag: 0.8 });
         this.addShake(0.08 * power);
         this.mascots.get(e.playerId)?.react('land');

@@ -241,7 +241,10 @@ const DECAL_FRAG = /* glsl */`
     float sh = (1.0 - smoothstep(uShadow * 0.35, uShadow, d)) * uShadowA;
     col.rgb = mix(col.rgb, vec3(0.16, 0.12, 0.2), sh / max(col.a + sh, 0.001));
     col.a = max(col.a, sh);
-    float ring = band(d, 0.56, 0.06) * uRingA;
+    // A dark keyline makes every player ring readable on all three fabrics.
+    float keyline = band(d, 0.57, 0.16) * uRingA;
+    col = mix(col, vec4(0.025, 0.07, 0.055, 1.0), keyline * 0.78);
+    float ring = band(d, 0.56, 0.085) * uRingA;
     col = mix(col, vec4(uColor, 1.0), ring);
     float ang = atan(p.x, p.y);
     float fill = step(abs(ang), uCharge * 3.14159);
@@ -327,7 +330,14 @@ export class Mascot {
   topY = 1.2;
 
   constructor(private sh: Shared, color: string, slot: number) {
-    this.bodyMat = new MeshStandardMaterial({ roughness: 0.42 });
+    this.bodyMat = new MeshStandardMaterial({ roughness: 0.34 });
+    // Shape the silhouette in the existing material, without an outline pass or extra mesh.
+    this.bodyMat.onBeforeCompile = shader => {
+      shader.fragmentShader = shader.fragmentShader.replace('#include <opaque_fragment>', `
+        float facing = abs(dot(normalize(normal), normalize(vViewPosition)));
+        outgoingLight *= mix(0.64, 1.0, smoothstep(0.06, 0.55, facing));
+        #include <opaque_fragment>`);
+    };
     this.bellyMat = new MeshStandardMaterial({ roughness: 0.55 });
     this.limbMat = new MeshStandardMaterial({ roughness: 0.45 });
     this.footMat = new MeshStandardMaterial({ roughness: 0.5 });
@@ -405,7 +415,7 @@ export class Mascot {
     this.decal.renderOrder = 1;
     this.decal.frustumCulled = false;
 
-    this.badge = new Sprite(new SpriteMaterial({ depthTest: false, depthWrite: false, transparent: true }));
+    this.badge = new Sprite(new SpriteMaterial({ depthTest: false, depthWrite: false, transparent: true, toneMapped: false }));
     this.badge.renderOrder = 10;
     this.badge.center.set(0.5, 0);
   }
@@ -425,7 +435,7 @@ export class Mascot {
   setBadge(tex: Texture, aspect: number): void {
     const m = this.badge.material;
     if (m.map !== tex) { m.map = tex; m.needsUpdate = true; }
-    this.badge.scale.set(0.5 * aspect, 0.5, 1);
+    this.badge.scale.set(0.63 * aspect, 0.63, 1);
   }
 
   react(kind: Reaction): void {
@@ -433,6 +443,7 @@ export class Mascot {
     this.reactT = kind === 'ko' ? 1.1 : kind === 'cheer' ? 1.6 : 0.7;
     if (kind === 'hit') this.squashVel -= 3;
     if (kind === 'ride') this.squashVel += 2.5;
+    if (kind === 'land') this.squashVel -= 2.4;
   }
 
   update(p: PlayerState, f: MascotFrame): void {
@@ -459,9 +470,9 @@ export class Mascot {
     this.prevVy = p.vy;
 
     let target = 0;
-    if (p.grounded) target = -0.3 * charge;
+    if (p.grounded) target = -0.34 * charge;
     else target = Math.min(0.22, Math.abs(p.vy) * 0.022);
-    if (p.slamming) target = 0.26;
+    if (p.slamming) target = 0.3;
     if (f.phase === 'lobby' || f.phase === 'results') target += f.reducedMotion ? 0 : Math.sin(f.time * 2.3 + this.seed) * 0.025;
     const k = 170, c = 13;
     this.squashVel += (-(this.squash - target) * k - this.squashVel * c) * dt;
@@ -530,7 +541,7 @@ export class Mascot {
 
     this.root.position.set(p.x, feet, p.z);
     this.topY = feet + 1.12 * sy + (this.crown.visible ? 0.3 : 0.18);
-    this.badge.position.set(p.x, this.topY + 0.12, p.z);
+    this.badge.position.set(p.x, this.topY + 0.19, p.z);
     (this.badge.material as SpriteMaterial).opacity = p.connected === false ? 0.6 : 1;
 
     this.updateDecal(p, f, floorH, inside, charge);

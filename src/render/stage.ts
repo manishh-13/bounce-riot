@@ -6,7 +6,7 @@ import {
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import type { ArenaTheme, ResolvedQuality } from './palette';
 
-const FOAM_COLORS = ['#ffb4a2', '#ffe08a', '#9fe3c9', '#a9c8ff', '#d4b8ff', '#ffc7e0', '#fff4dc'];
+const FOAM_COLORS = ['#f88e6f', '#ffd05a', '#65cbaa', '#78a9ef', '#b28ae9', '#f5a1c8', '#f5dfb3'];
 
 function helix(radius: number, height: number, turns: number, tube: number, tubular: number, radial: number): TubeGeometry {
   const pts: Vector3[] = [];
@@ -54,7 +54,7 @@ export class Stage {
     const g = this.group;
 
     const rimTex = stripeTexture(theme.rimA, theme.rimB, 24);
-    const rimMat = new MeshStandardMaterial({ map: rimTex, roughness: 0.62 });
+    const rimMat = new MeshStandardMaterial({ map: rimTex, roughness: 0.46 });
     const rim = new Mesh(new TorusGeometry(R + 0.36, 0.42, hi ? 20 : 12, hi ? 128 : 72), rimMat);
     rim.rotation.x = -Math.PI / 2;
     rim.scale.set(1, 1, 0.55);

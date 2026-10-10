@@ -44,9 +44,9 @@ Target player count: 2 to 8 total participants, including bots. One human plus b
 These are variations of one core arena system, not three unrelated minigames. The initial build deliberately avoids full cloth simulation, complex ragdoll grabs, destructible buildings and free camera control.
 
 ## Presentation
-Warm cream background, pine-coloured UI, coral primary actions, mint trampoline fabric. The game should feel like an authored toy-sports diorama. Characters need faces and motion silhouettes that read from a sofa. Player numbers and names supplement colour. One fixed camera keeps the whole arena visible.
+Warm cream background, pine-coloured UI, saturated coral primary accents and a deeper mint trampoline fabric. The game should feel like an authored toy-sports diorama. Directional lighting and a subtle material-level silhouette treatment give the characters definition without a separate outline pass. Player rings have a dark keyline, names are larger and unlit, and eight-player scores use a compact two-row TV layout. One fixed camera keeps the whole arena visible. Player numbers and names supplement colour.
 
-Sound effects are original Web Audio synthesis. They only begin after a user gesture. Screen shake and decorative effects are restrained; reduced-motion preferences reduce nonessential motion. Low graphics mode is available for weaker TV devices.
+Sound effects are original Web Audio synthesis. They only begin after a user gesture. Screen shake and decorative effects are restrained; reduced-motion preferences reduce nonessential motion. Low graphics mode is available for weaker TV devices. The TV colour pass preserves the simulation, particle caps, geometry and draw-call counts in the fixed render fixtures; it does not establish equal frame time on physical TVs. Wave crests use stronger colour rather than extra bloom or full-screen flashes.
 
 ## Scoring and fairness
 The implementation and its tests are the authority on constants. The player-facing rule is +2 for a credited knockout and a one-point penalty for an unassisted fall, with scores never below zero. Ties are resolved by knockouts, then fewer falls; an exact tie is shared. Protected respawn time prevents instant chain knockouts. Attribution has a bounded window so a much later self-fall does not award an old attacker.

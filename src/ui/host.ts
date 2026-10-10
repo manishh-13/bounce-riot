@@ -218,6 +218,7 @@ export function mountHost(root: HTMLElement, practiceImmediately = false): () =>
     const signature = s.players.map(p => `${p.id}:${p.score}:${p.respawnIn > 0}`).join('|');
     if (signature !== lastScore) {
       lastScore = signature;
+      $('#score-strip').classList.toggle('crowded', s.players.length > 4);
       $('#score-strip').innerHTML = s.players.map(p => `<div class="score-item ${p.respawnIn > 0 ? 'out' : ''}" style="--player-color:${PLAYER_COLORS[p.color % 8]}"><span>${escapeHtml(p.name)}</span><strong>${p.score}</strong></div>`).join('');
     }
     for (const event of s.events) {
@@ -290,7 +291,7 @@ export function mountHost(root: HTMLElement, practiceImmediately = false): () =>
   window.addEventListener('keydown', keydown, true); window.addEventListener('keyup', keyup); window.addEventListener('blur', blur); document.addEventListener('visibilitychange', visibility);
   const resize = () => scene.resize(); window.addEventListener('resize', resize);
   // Development-only inspection surface, excluded from the production bundle by Vite.
-  if (import.meta.env.DEV) (window as unknown as { __bounce?: unknown }).__bounce = { sim, startRound, backToLobby, get room() { return room; }, get connectionHealthy() { return connectionHealthy; }, inputs: remoteInputs };
+  if (import.meta.env.DEV) (window as unknown as { __bounce?: unknown }).__bounce = { sim, scene, startRound, backToLobby, get room() { return room; }, get connectionHealthy() { return connectionHealthy; }, inputs: remoteInputs };
   root.inert = false;
   raf = requestAnimationFrame(tick);
   if (practiceImmediately) startPractice();

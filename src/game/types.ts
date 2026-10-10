@@ -1,4 +1,4 @@
-export const PLAYER_COLORS = ['#f65d46', '#467cff', '#f1c94c', '#b18aff', '#53c99a', '#ed83bc', '#f99b43', '#a6cedd'] as const;
+export const PLAYER_COLORS = ['#fa513a', '#346dff', '#f5be28', '#a569f7', '#29bc87', '#ef67ad', '#f79432', '#75c5df'] as const;
 export const MAX_PLAYERS = 8;
 export type Phase = 'lobby' | 'countdown' | 'playing' | 'results' | 'paused';
 export type ArenaId = 'springyard' | 'moonbounce' | 'aftershock';

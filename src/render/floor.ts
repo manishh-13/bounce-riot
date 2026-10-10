@@ -72,7 +72,7 @@ export class FloorField {
     this.wx[i] = x; this.wz[i] = z; this.wr[i] = r;
     this.ww[i] = 0.45;
     this.wa[i] = 0.35 * VISUAL_GAIN * eff * fade;
-    this.wt[i] = Math.min(0.9, (0.4 + 0.6 * eff) * fade);
+    this.wt[i] = Math.min(0.98, (0.52 + 0.62 * eff) * fade);
     this.tmp.set(color);
     this.wc[i * 3] = this.tmp.r; this.wc[i * 3 + 1] = this.tmp.g; this.wc[i * 3 + 2] = this.tmp.b;
   }
@@ -122,7 +122,7 @@ export class FloorField {
     if (wsum <= 1e-4) { out[o + 3] = 0; return; }
     const pin = this.pin(x, z);
     out[o] = r / wsum; out[o + 1] = g / wsum; out[o + 2] = b / wsum;
-    out[o + 3] = Math.min(0.85, wsum) * pin;
+    out[o + 3] = Math.min(0.96, wsum) * pin;
   }
 }
 
@@ -141,8 +141,11 @@ export class TrampolineFloor {
       shader.vertexShader = 'attribute vec4 tint;\nvarying vec4 vTint;\n' + shader.vertexShader.replace(
         '#include <color_vertex>', '#include <color_vertex>\n  vTint = tint;');
       shader.fragmentShader = 'varying vec4 vTint;\n' + shader.fragmentShader
-        .replace('#include <color_fragment>', '#include <color_fragment>\n  diffuseColor.rgb = mix(diffuseColor.rgb, vTint.rgb, vTint.a);')
-        .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n  totalEmissiveRadiance += vTint.rgb * vTint.a * 0.22;');
+        .replace('#include <color_fragment>', `#include <color_fragment>
+          // Keep the soft physical ripple, but give its coloured crest a crisp readable core.
+          float waveInk = max(vTint.a * 0.5, smoothstep(0.28, 0.9, vTint.a));
+          diffuseColor.rgb = mix(diffuseColor.rgb, vTint.rgb, waveInk);`)
+        .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n  totalEmissiveRadiance += vTint.rgb * vTint.a * 0.12;');
     };
     this.mesh = new Mesh(undefined, this.material);
     this.mesh.receiveShadow = true;
@@ -241,7 +244,7 @@ export function createFloorTexture(theme: ArenaTheme, size: number, radius: numb
   ctx.beginPath(); ctx.arc(c, c, R * 1.05, 0, Math.PI * 2); ctx.fill();
 
   ctx.save();
-  ctx.globalAlpha = 0.16;
+  ctx.globalAlpha = 0.09;
   ctx.fillStyle = theme.cream;
   for (let i = 0; i < 16; i += 2) {
     const a0 = (i / 16) * Math.PI * 2 - Math.PI / 2, a1 = ((i + 1) / 16) * Math.PI * 2 - Math.PI / 2;
