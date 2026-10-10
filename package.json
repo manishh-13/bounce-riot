@@ -1,0 +1,36 @@
+{
+  "name": "bounce-riot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Make waves. A 3D trampoline party brawler for a shared screen and phone controllers.",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0 --port 4381",
+    "build": "tsc --noEmit && vite build && node scripts/postbuild.mjs",
+    "preview": "vite preview --host 0.0.0.0 --port 4381",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "signal": "node server/local.mjs",
+    "check": "npm run test && npm run build"
+  },
+  "dependencies": {
+    "@fontsource/fredoka": "^5.3.0",
+    "@fontsource/nunito-sans": "^5.3.0",
+    "qrcode": "^1.5.4",
+    "three": "^0.180.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.0",
+    "@types/node": "^22.18.0",
+    "@types/qrcode": "^1.5.5",
+    "@types/three": "^0.180.0",
+    "typescript": "^5.9.3",
+    "vite": "^6.4.1",
+    "vitest": "^4.1.11",
+    "ws": "^8.18.3"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}

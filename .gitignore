@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+playwright-report/
+test-results/
+.artifacts/
+*.log
+infra/generated-template.json
+infra/deployment.json
+.DS_Store
+__pycache__/
+*.pyc
