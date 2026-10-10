@@ -27,7 +27,7 @@ self.addEventListener('fetch',event=>{
     return;
   }
   if(!FILES.some(f=>new URL(f,self.location).href===url.href))return;
-  event.respondWith(caches.match(event.request).then(cached=>cached||fetch(event.request)));
+  event.respondWith(caches.match(event.request,{ignoreVary:true}).then(cached=>cached||fetch(event.request)));
 });\n`;
 await writeFile(join(root, 'sw.js'), content);
 await writeFile(join(root, '.nojekyll'), '');

@@ -41,19 +41,22 @@ test('practice has actual movement, slams, pause, results and rematch', async ({
   page.on('pageerror', e => errors.push(e.message));
   await page.goto(gameUrl('#practice'));
   await page.locator('#duration-select').selectOption('30');
+  // Keep this input assertion deterministic: opponent AI must not cancel the tested charge.
+  // Bot behaviour and combat are exercised independently by the simulation and live-round tests.
+  await page.evaluate(() => { const sim = (window as any).__bounce.sim; sim.setPlayers(sim.state.players.map((p: any) => ({ id: p.id, name: p.name, color: p.color, connected: true, bot: false }))); });
   await page.locator('#start-button').click();
   await expect(page.locator('#round-callout')).toBeVisible();
   await expect(page.locator('#round-callout')).toBeHidden({ timeout: 30000 });
   const before = await page.evaluate(() => (window as any).__bounce.sim.state.players.find((p: any) => p.id === 'keyboard').x);
   await page.keyboard.down('ArrowRight');
-  await runFrames(page, 20);
+  await page.waitForFunction((start) => (window as any).__bounce.sim.state.players.find((p: any) => p.id === 'keyboard').x > start + 0.3, before, { timeout: 10000 });
   await page.keyboard.up('ArrowRight');
   const after = await page.evaluate(() => (window as any).__bounce.sim.state.players.find((p: any) => p.id === 'keyboard').x);
   expect(after).toBeGreaterThan(before + 0.2);
   await page.keyboard.down('Space');
-  await expect(async () => expect(await page.evaluate(() => (window as any).__bounce.sim.state.players.find((p: any) => p.id === 'keyboard').charge)).toBeGreaterThan(0.1)).toPass();
+  await page.waitForFunction(() => (window as any).__bounce.sim.state.players.find((p: any) => p.id === 'keyboard').charge > 0.1, null, { timeout: 10000 });
   await page.keyboard.up('Space');
-  await expect(async () => expect(await page.evaluate(() => (window as any).__bounce.sim.state.events.some((e: any) => e.type === 'slam' && e.playerId === 'keyboard'))).toBeTruthy()).toPass();
+  await page.waitForFunction(() => (window as any).__bounce.sim.state.events.some((e: any) => e.type === 'slam' && e.playerId === 'keyboard'), null, { timeout: 10000 });
   await page.locator('#pause-button').click();
   await expect(page.locator('#pause-panel')).toBeVisible();
   const paused = await page.evaluate(() => (window as any).__bounce.sim.state.remaining);
