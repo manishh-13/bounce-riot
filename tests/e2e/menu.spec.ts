@@ -34,6 +34,9 @@ for (const viewport of [{ width: 1280, height: 720 }, { width: 1920, height: 108
     await page.keyboard.press('Enter');
     await expect(page.locator('#lobby-panel')).toBeVisible();
     await expect(page.locator('#lobby-roster .roster-player')).toHaveCount(4);
+    const lobbyEdge = await page.locator('#arena-view').evaluate(el => getComputedStyle(el, '::after').backgroundImage);
+    expect(lobbyEdge).toContain('rgb(35, 77, 79)');
+    expect(lobbyEdge).not.toContain('rgb(245, 239, 223)');
   });
 }
 

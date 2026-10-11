@@ -13,6 +13,10 @@ for (const viewport of [{ width: 1280, height: 720 }, { width: 1920, height: 108
     for (let i = 0; i < 4; i++) await page.locator('#add-bot').click();
     await page.locator('#start-button').click();
     await expect(page.locator('#arena-view canvas')).toBeVisible();
+    // The old 17% header scrim must not crop the new full-screen vignette into a hard line.
+    const overlayHeight = await page.locator('.host-shell').evaluate(el => parseFloat(getComputedStyle(el, '::before').height));
+    expect(overlayHeight).toBeCloseTo(viewport.height, 0);
+    await expect(page.locator('#pause-button')).toHaveCSS('color', 'rgb(255, 240, 210)');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await expect(page.locator('#score-strip .score-item')).toHaveCount(8);
     await expect(page.locator('#score-strip')).toHaveClass(/crowded/);

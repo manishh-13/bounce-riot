@@ -6,7 +6,7 @@ Automated browser clients do not replace testing on the actual TV and phones. Us
 - Open the stable public game URL on the TV. Try Low graphics if the animated menu stutters.
 - Use the TV's low-latency game mode if available. Disable motion interpolation if it adds visible delay.
 - Put TV and phones on the same normal Wi-Fi, not an isolated guest network.
-- Keep the TV page visible and choose Host a party.
+- Keep the TV page visible and choose Play (Host a party).
 - Scan from one Android phone and one iPhone if available.
 - Confirm the controller says DIRECT TO TV or CONNECTED VIA RELAY. Both are supported; direct is preferred.
 - On Android, enter fullscreen. On iPhone, optionally launch from Add to Home Screen and rejoin.

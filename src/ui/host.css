@@ -3,7 +3,7 @@ body.host-mode{background:#234d4f;color:#fff2d6}
 .host-mode #app .host-shell{background:#234d4f;min-height:540px;height:100dvh}
 .host-mode #app .arena-view{inset:0;width:100%;height:100%;display:block}
 .host-mode #app .arena-view:after{display:none}
-.host-mode #app .host-shell:before{content:'';position:absolute;inset:0;z-index:1;pointer-events:none;background:radial-gradient(ellipse at 59% 49%,transparent 30%,#071d2452 100%)}
+.host-mode #app .host-shell:before{content:'';position:absolute;inset:0;height:100%;z-index:1;pointer-events:none;background:radial-gradient(ellipse at 59% 49%,transparent 30%,#071d2452 100%)}
 .host-mode #app.title-screen .host-shell:after{content:'';position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(90deg,#102d32cc 0%,#173e3f8c 25%,transparent 61%)}
 .host-mode .host-header{height:88px;padding:18px 3.4%;z-index:10}
 .host-mode .header-right>.tiny-label{display:none}
@@ -69,4 +69,4 @@ body.host-mode{background:#234d4f;color:#fff2d6}
 @media(max-width:1100px) and (min-width:800px){.host-mode .home-panel{left:6%;width:29vw}.host-mode .menu-action{padding-left:16px}.host-mode .menu-action>span{font-size:23px}.host-mode .lobby-panel{left:3%;width:42%}}
 @media(max-width:799px){.host-mode{overflow:auto}.host-mode #app .host-shell{min-height:680px}.host-mode .home-panel{top:50%;left:50%;transform:translate(-50%,-50%);width:min(310px,78%)}.host-mode .home-panel .game-title{font-size:47px}.host-mode .menu-kicker{font-size:8px}.host-mode .menu-action{min-height:58px}.host-mode .menu-action>span{font-size:23px}.host-mode .title-screen .host-shell:after{background:#0c2d2f95!important}.host-mode .lobby-panel{top:90px;left:5%;width:90%;bottom:26px;padding:20px}.host-mode .lobby .arena-view{left:0!important;width:100%!important}.host-mode .host-header{padding:13px 5%;height:68px}.host-mode .host-header .icon-button{font-size:8px;min-height:32px}.host-mode .host-footer>span{display:none}.host-mode .host-footer{justify-content:center}.host-mode .host-footer>div{gap:18px}.host-mode #app.match-active .host-shell{min-height:500px}.host-mode .settings-panel{padding:24px}.host-mode .join-announcement{left:6%;right:6%;top:auto;bottom:8px}}
 
-.host-mode .lobby .arena-view:after{content:'';display:block!important;position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,#234d4f,transparent 12%)}
+.host-mode #app.lobby .arena-view:after{content:'';display:block!important;position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,#234d4f,transparent 12%)}
