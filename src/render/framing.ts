@@ -9,7 +9,7 @@ function samplePoints(radius: number): Vector3[] {
   for (let i = 0; i < n; i++) {
     const a = (i / n) * Math.PI * 2;
     pts.push(new Vector3(Math.cos(a) * (radius + 0.95), 0.35, Math.sin(a) * (radius + 0.95)));
-    pts.push(new Vector3(Math.cos(a) * (radius + 0.75), -1.05, Math.sin(a) * (radius + 0.75)));
+    pts.push(new Vector3(Math.cos(a) * (radius + 0.95), -0.96, Math.sin(a) * (radius + 0.95)));
     if (i % 4 === 0) pts.push(new Vector3(Math.cos(a) * radius * 0.85, 2.0, Math.sin(a) * radius * 0.85));
   }
   return pts;
@@ -26,17 +26,21 @@ function bounds(cam: PerspectiveCamera, points: Vector3[]): [number, number, num
   return [minX, maxX, minY, maxY];
 }
 
-// Fixed camera on the +Z/+Y side with zero X rotation, distance solved so the whole stage fits any aspect.
-export function frameArena(cam: PerspectiveCamera, aspect: number, radius: number): { position: Vector3; target: Vector3 } {
+// Fixed camera, with a lower match angle to use TV width while protecting the top HUD.
+export function frameArena(cam: PerspectiveCamera, aspect: number, radius: number, matchView = false): { position: Vector3; target: Vector3 } {
   cam.aspect = aspect;
   const portrait = MathUtils.clamp((1.35 - aspect) / 0.8, 0, 1);
   cam.fov = MathUtils.lerp(30, 38, portrait);
   cam.updateProjectionMatrix();
-  const elev = MathUtils.degToRad(MathUtils.lerp(52, 64, portrait));
+  const elev = MathUtils.degToRad(MathUtils.lerp(matchView ? 35 : 49, 64, portrait));
   const dir = new Vector3(0, Math.sin(elev), Math.cos(elev));
   const target = new Vector3(0, -0.2, 0);
   const points = samplePoints(radius);
-  const marginX = 0.95, marginY = 0.9;
+  const marginX = 0.95;
+  const topInset = matchView ? MathUtils.lerp(0.15, 0.23, portrait) : 0.05;
+  const bottomInset = matchView ? MathUtils.lerp(0.035, 0.12, portrait) : 0.05;
+  const marginY = 1 - topInset - bottomInset;
+  const centreY = bottomInset - topInset;
   let dist = 24;
   for (let iter = 0; iter < 4; iter++) {
     let lo = 6, hi = 120;
@@ -52,7 +56,7 @@ export function frameArena(cam: PerspectiveCamera, aspect: number, radius: numbe
     cam.position.copy(target).addScaledVector(dir, dist);
     cam.lookAt(target);
     const [, , y0, y1] = bounds(cam, points);
-    const centre = (y0 + y1) / 2;
+    const centre = (y0 + y1) / 2 - centreY;
     const worldPerNdc = Math.tan(MathUtils.degToRad(cam.fov / 2)) * dist;
     target.z -= (centre * worldPerNdc) / Math.sin(elev);
   }

@@ -136,7 +136,7 @@ export class TrampolineFloor {
   private idle = true;
 
   constructor(texture: Texture, rings: number, segments: number) {
-    this.material = new MeshStandardMaterial({ map: texture, roughness: 0.82, metalness: 0 });
+    this.material = new MeshStandardMaterial({ map: texture, roughness: 0.88, metalness: 0, envMapIntensity: 0.18 });
     this.material.onBeforeCompile = (shader) => {
       shader.vertexShader = 'attribute vec4 tint;\nvarying vec4 vTint;\n' + shader.vertexShader.replace(
         '#include <color_vertex>', '#include <color_vertex>\n  vTint = tint;');
@@ -249,6 +249,17 @@ export function createFloorTexture(theme: ArenaTheme, size: number, radius: numb
   for (let i = 0; i < 16; i += 2) {
     const a0 = (i / 16) * Math.PI * 2 - Math.PI / 2, a1 = ((i + 1) / 16) * Math.PI * 2 - Math.PI / 2;
     ctx.beginPath(); ctx.moveTo(c, c); ctx.arc(c, c, R * 0.9, a0, a1); ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+
+  // Fine woven rubber texture, baked once and mipmapped so it does not shimmer at TV distance.
+  ctx.save();
+  ctx.globalAlpha = 0.045;
+  ctx.strokeStyle = '#173b31';
+  ctx.lineWidth = 0.6;
+  for (let v = 0; v < size; v += 5) {
+    ctx.beginPath(); ctx.moveTo(v, 0); ctx.lineTo(v, size); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, v); ctx.lineTo(size, v); ctx.stroke();
   }
   ctx.restore();
 

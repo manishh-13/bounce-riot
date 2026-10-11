@@ -24,6 +24,12 @@ try {
   await phone.locator('#player-name').fill('Live check');
   await phone.locator('#join-button').click();
   await phone.locator('#arm-controller').waitFor({state:'visible',timeout:25000});
+  await phone.locator('#identity-reveal').waitFor({state:'visible'});
+  assert.equal(await phone.locator('#identity-headline').textContent(), "You're the coral player.");
+  assert.equal(await phone.locator('#identity-number').textContent(), 'PLAYER 1');
+  assert.match(await phone.locator('#identity-preview svg').getAttribute('aria-label'), /coral.*headband/);
+  await host.waitForFunction(() => document.querySelector('#lobby-roster')?.textContent?.includes('CORAL'));
+  await phone.screenshot({path:`${artifacts}public-identity.png`});
   await phone.locator('#arm-controller').click();
   await phone.locator('#controller-gate').waitFor({state:'hidden'});
   await phone.waitForFunction(()=>document.querySelector('#controller-connection')?.textContent==='DIRECT TO TV',null,{timeout:25000});
@@ -44,7 +50,7 @@ try {
   await phone.locator('#captain-action').click();
   await host.locator('#round-callout').waitFor({state:'visible',timeout:15000});
   assert.deepEqual(errors,[]);
-  console.log(JSON.stringify({url:base,hostedRoom:true,phoneFullscreen:await phone.evaluate(()=>!!document.fullscreenElement),transport:await phone.locator('#controller-connection').textContent(),fullThirtySecondRound:true,results:true,phoneRematch:true,errors},null,2));
+  console.log(JSON.stringify({url:base,hostedRoom:true,playerIdentityReveal:true,phoneFullscreen:await phone.evaluate(()=>!!document.fullscreenElement),transport:await phone.locator('#controller-connection').textContent(),fullThirtySecondRound:true,results:true,phoneRematch:true,errors},null,2));
   await phone.locator('#controller-menu').click();
   await phone.locator('#captain-lobby').click();
   await host.locator('#close-room-button').waitFor({state:'visible'});

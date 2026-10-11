@@ -4,6 +4,7 @@ import { PLAYER_COLORS, type ArenaId, type Input, type PlayerSpec } from '../gam
 import { ArenaScene } from '../render/scene';
 import { loadServiceConfig, RoomConnection, type Member } from '../net/room';
 import { GameAudio } from './audio';
+import { identitySvg, playerIdentity } from './player-identity';
 import { InputBuffer } from '../net/input-buffer';
 import { escapeHtml, fullscreen, readSaved, save, removeSaved, WakeKeeper, enableRemoteNavigation } from './helpers';
 
@@ -17,6 +18,7 @@ export function mountHost(root: HTMLElement, practiceImmediately = false): () =>
   let currentPhase = '', lastScore = '', lastStatus = 0, lastEvent = 0;
   let lastTime = performance.now(), frames = 0, frameClock = 0, fps = 60, accumulator = 0;
   let feedback = '', feedbackUntil = 0, connectionHealthy = false;
+  let joinNoticeUntil = 0;
   let raf = 0, quality: 'auto' | 'low' | 'high' = readSaved<'auto' | 'low' | 'high'>('bounce-riot-quality') ?? 'auto';
   let roundLength = 90, arena: ArenaId = 'springyard';
   const remoteInputs = new InputBuffer();
@@ -50,13 +52,14 @@ export function mountHost(root: HTMLElement, practiceImmediately = false): () =>
         <button class="button primary wide" id="start-button" disabled>Waiting for a player</button>
         <div class="lobby-footer"><button class="text-button" id="how-button">How to play</button><button class="text-button" id="close-room-button">Back home</button></div>
       </section>
+      <div class="join-announcement" id="join-announcement" role="status" hidden></div>
       <section class="play-hud" id="play-hud" hidden aria-label="Match scoreboard"><div class="score-strip" id="score-strip"></div><div class="match-clock"><span id="round-label">ROUND 1</span><strong id="match-time">90</strong><small>SECONDS</small></div></section>
       <div class="round-callout" id="round-callout" hidden aria-live="polite"><span id="callout-kicker">READY TO MAKE WAVES?</span><strong id="callout-text">3</strong></div>
       <div class="match-bottom" id="match-bottom" hidden><div><span id="match-room">PRACTICE ROUND</span><small id="match-controls">WASD / ARROWS TO MOVE · TAP SPACE TO HOP · HOLD + RELEASE TO SLAM</small></div><button class="button compact secondary" id="pause-button">Pause</button></div>
       <div class="event-toast" id="event-toast" hidden></div>
       <section class="result-panel" id="result-panel" hidden><p class="eyebrow">THAT WAS PERSONAL</p><h1 id="winner-name">Nice waves.</h1><p id="winner-subtitle">Same friends. One more round.</p><ol class="results-list" id="results-list"></ol><div class="result-actions"><button class="button primary" id="rematch-button">One more round ↗</button><button class="button secondary" id="lobby-button">Back to lobby</button></div></section>
       <section class="pause-panel" id="pause-panel" hidden><p class="eyebrow">TAKE A BREATHER</p><h1>Riot on hold.</h1><p>Your friends can wait a second.</p><button class="button primary wide" id="resume-button">Back to the brawl</button><button class="button secondary wide" id="pause-lobby-button">Back to lobby</button></section>
-      <section class="help-panel" id="help-panel" hidden><p class="eyebrow">A LITTLE FRIENDLY ADVICE</p><h1>Make waves.<br>Not excuses.</h1><div class="how-row"><b>01</b><div><h3>Move with your left thumb.</h3><p>Stay away from the edge. The foam pit is not your friend.</p></div></div><div class="how-row"><b>02</b><div><h3>Hold. Release. Slam.</h3><p>Charge the big button, then let go. Bigger charge, bigger wave. You move slower while charging.</p></div></div><div class="how-row"><b>03</b><div><h3>Tap to hop over a wave.</h3><p>Catch it in the air for a boost. Turn their attack into your next move.</p></div></div><p class="scoring-note">Knock someone out: +2 points. Fall on your own: −1 point (never below zero). Everyone respawns. Most points wins.</p><button class="button primary wide" id="help-close">Got it. Let's bounce.</button></section>
+      <section class="help-panel" id="help-panel" hidden><p class="eyebrow">A LITTLE FRIENDLY ADVICE</p><h1>Make waves.<br>Not excuses.</h1><div class="how-row"><b>01</b><div><h3>Move with your left thumb.</h3><p>Stay away from the edge. The lagoon is not your friend.</p></div></div><div class="how-row"><b>02</b><div><h3>Hold. Release. Slam.</h3><p>Charge the big button, then let go. Bigger charge, bigger wave. You move slower while charging.</p></div></div><div class="how-row"><b>03</b><div><h3>Tap to hop over a wave.</h3><p>Catch it in the air for a boost. Turn their attack into your next move.</p></div></div><p class="scoring-note">Knock someone out: +2 points. Fall on your own: −1 point (never below zero). Everyone respawns. Most points wins.</p><button class="button primary wide" id="help-close">Got it. Let's bounce.</button></section>
       <footer class="host-footer" id="host-footer"><span>MADE FOR PEOPLE IN THE SAME ROOM.</span><div><button class="text-button" id="quality-toggle">GRAPHICS: AUTO</button><button class="text-button" id="about-toggle">ABOUT & PRIVACY</button><span id="fps-counter"></span></div></footer>
       <section class="about-panel" id="about-panel" hidden><h2>A small game. A big room.</h2><p>Bounce Riot is a free, open-source party game by Manish. Your TV runs the game. Your phone sends the moves.</p><p>Room joining needs internet. Direct connections are attempted first; encrypted WebSocket relay is the fallback. Room access expires after two hours; temporary database records are then removed asynchronously. No ads, accounts, analytics or microphone/camera access.</p><p>Current Chrome-based browsers are recommended. Android TV hardware varies. Use Low graphics if needed. Calls and system gestures cannot be blocked by a webpage.</p><a class="text-link" href="https://github.com/manishh-13/bounce-riot" target="_blank" rel="noopener">Source code and setup ↗</a><button class="button primary wide" id="about-close">Back to the good times</button></section>
       <p class="global-notice" id="global-notice" role="status" hidden></p>
@@ -85,7 +88,7 @@ export function mountHost(root: HTMLElement, practiceImmediately = false): () =>
   function captainId() { return roster.find(m => m.connected)?.id; }
   function renderRoster() {
     const players = sim.state.players;
-    $('#lobby-roster').innerHTML = players.map(p => `<div class="roster-player ${p.connected === false ? 'disconnected' : ''}" style="--player-color:${PLAYER_COLORS[p.color % 8]}"><span class="roster-face" aria-hidden="true"><i></i><i></i></span><div><strong>${escapeHtml(p.name)}</strong><small>${p.bot ? 'PRACTICE BOT' : p.id === 'keyboard' ? 'KEYBOARD' : p.connected === false ? 'RECONNECTING' : p.id === captainId() ? 'CAPTAIN' : 'READY'}</small></div>${!p.bot && p.id !== 'keyboard' ? `<button class="kick-button" data-kick="${escapeHtml(p.id)}" aria-label="Remove ${escapeHtml(p.name)}">×</button>` : ''}</div>`).join('') + (players.length === 0 ? '<div class="empty-roster">Your friends will appear here.<br>Scan the QR code to grab a controller.</div>' : '');
+    $('#lobby-roster').innerHTML = players.map(p => `<div class="roster-player ${p.connected === false ? 'disconnected' : ''}" style="--player-color:${PLAYER_COLORS[p.color % 8]}"><span class="roster-avatar" aria-hidden="true">${identitySvg(playerIdentity(p.color))}</span><div><strong>${escapeHtml(p.name)}</strong><small>${p.color + 1} · ${playerIdentity(p.color).colorName.toUpperCase()} · ${p.bot ? 'BOT' : p.id === 'keyboard' ? 'KEYBOARD' : p.connected === false ? 'OFFLINE' : p.id === captainId() ? 'CAPTAIN' : 'READY'}</small></div>${!p.bot && p.id !== 'keyboard' ? `<button class="kick-button" data-kick="${escapeHtml(p.id)}" aria-label="Remove ${escapeHtml(p.name)}">×</button>` : ''}</div>`).join('') + (players.length === 0 ? '<div class="empty-roster">Your friends will appear here.<br>Scan the QR code to grab a controller.</div>' : '');
     $('#lobby-roster').querySelectorAll<HTMLButtonElement>('[data-kick]').forEach(button => button.addEventListener('click', () => connection?.kick(button.dataset.kick!)));
     const humans = players.filter(p => !p.bot && p.connected !== false).length;
     const activePlayers = players.filter(p => p.bot || p.connected !== false).length;
@@ -125,6 +128,14 @@ export function mountHost(root: HTMLElement, practiceImmediately = false): () =>
           setNotice('');
         },
         onRoster: next => {
+          const newcomer = next.find(member => member.connected && !roster.some(previous => previous.id === member.id && previous.connected));
+          if (newcomer && sim.state.phase === 'lobby') {
+            const identity = playerIdentity(newcomer.slot);
+            const announcement = $('#join-announcement');
+            announcement.textContent = `${newcomer.name} is ${identity.colorName} · Player ${identity.number}`;
+            announcement.style.setProperty('--player-color', identity.color);
+            joinNoticeUntil = performance.now() + 4500;
+          }
           for (const member of roster) if (!next.some(m => m.id === member.id && m.connected)) remoteInputs.remove(member.id);
           roster = next; syncPlayers();
         },
@@ -194,7 +205,9 @@ export function mountHost(root: HTMLElement, practiceImmediately = false): () =>
     $('#result-panel').hidden = phase !== 'results';
     $('#round-callout').hidden = phase !== 'countdown';
     root.classList.toggle('lobby', phase === 'lobby');
-    root.classList.toggle('match-active', ['countdown', 'playing', 'paused', 'results'].includes(phase));
+    const matchActive = ['countdown', 'playing', 'paused', 'results'].includes(phase);
+    root.classList.toggle('match-active', matchActive);
+    scene.setMatchView(matchActive);
     if (phase === 'results') renderResults();
     if (phase === 'lobby') renderRoster();
     $('#match-room').textContent = practice ? 'PRACTICE ROUND' : `ROOM ${room}`;
@@ -227,7 +240,7 @@ export function mountHost(root: HTMLElement, practiceImmediately = false): () =>
       const player = s.players.find(p => p.id === event.playerId);
       if (roster.some(m => m.id === event.playerId && m.connected) && ['ko', 'ride', 'hit', 'slam', 'respawn'].includes(event.type)) connection?.send(event.playerId, { kind: 'feedback', event: event.type });
       if (event.type === 'ko') {
-        feedback = event.otherId ? `${s.players.find(p => p.id === event.otherId)?.name ?? 'A rival'} sends ${player?.name ?? 'someone'} flying!` : `${player?.name ?? 'Someone'} found the foam pit.`;
+        feedback = event.otherId ? `${s.players.find(p => p.id === event.otherId)?.name ?? 'A rival'} sends ${player?.name ?? 'someone'} flying!` : `${player?.name ?? 'Someone'} made a splash.`;
         feedbackUntil = performance.now() + 2200;
       } else if (event.type === 'ride') { feedback = `${player?.name ?? 'Someone'} caught the wave!`; feedbackUntil = performance.now() + 1400; }
     }
@@ -253,6 +266,7 @@ export function mountHost(root: HTMLElement, practiceImmediately = false): () =>
       scene.render(sim.state, dt); audio.consume(sim.state.events); renderPhase(); renderHud();
       if (now - lastStatus > 250) { lastStatus = now; sendStatuses(); }
     }
+    $('#join-announcement').hidden = home || sim.state.phase !== 'lobby' || now > joinNoticeUntil;
     raf = requestAnimationFrame(tick);
   }
   $('#host-button').addEventListener('click', () => void startHosting());

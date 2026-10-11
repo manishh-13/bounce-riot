@@ -44,3 +44,23 @@
 }
 /* Keep the match clock separate from the TV's sound/fullscreen controls. */
 @media(min-width:1101px){.play-hud{left:16%;right:24%}}
+
+/* The lagoon fills the TV; the match camera reserves safe room for scores and controls. */
+.match-active .arena-view{inset:0;width:100%;height:100%}
+.match-active .host-shell{background:#289fb6}
+.match-active .host-shell:before{content:'';position:absolute;inset:0 0 auto;height:17%;background:linear-gradient(to bottom,#fff8e8ed 0%,#fff8e8d6 45%,#fff8e800 100%);pointer-events:none;z-index:1}
+.match-active .host-header .icon-button{background:#fff9eae8;border-color:#a2baad;box-shadow:0 2px 0 #17443a14}
+.match-active .match-bottom>div{background:#fff9eadd;border:1px solid #fff6e0;padding:9px 14px;border-radius:12px}
+.match-active .match-bottom>.button{background:#fff9eae8;border-color:#bad1c1}
+@media(max-width:799px){.match-active .arena-view{inset:0;width:100%;height:100%}.match-active .host-shell:before{height:25%}.match-active .match-bottom>div{padding:7px 9px}}
+
+/* The same colour, number and accessory identify a player on the phone and on the TV. */
+.roster-avatar{display:block;width:32px;height:39px;flex:0 0 32px}
+.roster-avatar svg{display:block;width:100%;height:100%}
+.join-announcement{position:absolute;top:14%;left:53%;right:6%;z-index:8;display:flex;align-items:center;justify-content:center;gap:12px;padding:14px 20px;background:#fff9e9;border:2px solid var(--player-color);border-radius:18px;font-family:'Fredoka',sans-serif;font-size:clamp(18px,1.7vw,28px);font-weight:600;text-align:center;box-shadow:0 4px 0 #173b3120;pointer-events:none}
+.join-announcement:before{content:'';width:22px;height:24px;flex:0 0 22px;background:var(--player-color);border-radius:48% 48% 38% 38%;box-shadow:inset -3px -3px 0 #173b3126}
+@media(max-width:799px){.join-announcement{top:auto;bottom:12px;left:6%;right:6%;font-size:16px;padding:10px}.roster-avatar{height:34px}}
+@media(max-height:750px) and (min-width:800px){.roster-avatar{width:26px;flex-basis:26px;height:28px}}
+/* Feather the menu diorama into the paper without putting a rectangular water tile behind it. */
+#app:not(.match-active) .arena-view:after{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,var(--paper),#f5efdf00 15%),linear-gradient(180deg,var(--paper),#f5efdf00 13%,#f5efdf00 82%,var(--paper))}
+#app:not(.in-game) .scene-caption{background:#fff8e8e6;padding:6px 10px;border-radius:8px}

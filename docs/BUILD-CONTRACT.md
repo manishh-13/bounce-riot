@@ -21,8 +21,9 @@ Export class ArenaScene from src/render/scene.ts.
 - render(state: GameState, dt: number): void (application handles requestAnimationFrame)
 - resize(): void
 - dispose(): void
+- setMatchView(active: boolean): void (selects the fixed menu or match framing)
 - setQuality(quality: 'auto'|'low'|'high'): void
-No DOM/UI or networking dependencies. Three.js available. Dispose listeners, GPU resources. For menu state show arena beautifully without needing live game. Characters procedural but sculpted, no primitive placeholder vibe. Use events with unique IDs without reprocessing. Label names can use CSS2DRenderer or canvas sprite but avoid massive textures per frame. Render a physical spring floor with animated traveling waves that visually match simulation. Camera fixed, full arena visible, no gameplay zoom. Distinct characters, visible direction/charge, shadows, stage rim, spring supports, foam-pit scenery, warm sky. Correct lighting/sRGB, anti-aliasing with capped DPR, affordable for TV. Reduced motion disables shake/confetti excess, no flashes.
+No DOM/UI or networking dependencies. Three.js available. Dispose listeners, GPU resources. For menu state show arena beautifully without needing live game. Characters procedural but sculpted, no primitive placeholder vibe. Use events with unique IDs without reprocessing. Label names can use CSS2DRenderer or canvas sprite but avoid massive textures per frame. Render a physical spring floor with animated traveling waves that visually match simulation. Camera fixed, full arena visible, no gameplay zoom. Distinct characters, visible direction/charge, shadows, stage rim, short springs and an inflatable pontoon on animated lagoon water. No sky, clouds or foam pit. Separate fixed menu/match framing keeps the larger match board visible. Correct lighting/sRGB, anti-aliasing with capped DPR, affordable for TV. Reduced motion disables shake/confetti excess, no flashes.
 
 ## Room service protocol
 All messages JSON over websocket, maximum 16KB. Node.js Lambda handler and local ws server should share a tested hub. Server assigns identities and verifies permissions. Never trust client-provided from/role/slot.

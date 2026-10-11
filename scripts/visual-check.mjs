@@ -21,7 +21,7 @@ const cases = [
 ];
 const report = [];
 try {
-  for (const spec of cases) {
+  for (const spec of cases.filter(item => !process.env.BOUNCE_VISUAL_FILTER || item.name.includes(process.env.BOUNCE_VISUAL_FILTER))) {
     const page = await browser.newPage({ viewport: { width: spec.width, height: spec.height } });
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
@@ -52,15 +52,22 @@ try {
       // Freeze physics, not the host UI. Render fixed timesteps to settle the presentation.
       sim.step = () => {};
       const render = scene.render.bind(scene);
-      for (let frame = 0; frame < 100; frame++) render(sim.state, 1 / 60);
+      for (let frame = 0; frame < 45; frame++) render(sim.state, 1 / 60);
       scene.render = state => render(state, 0);
     }, spec);
     await page.locator('#play-hud').waitFor({ state: 'visible' });
     await page.evaluate(() => document.fonts.ready);
-    const stats = await page.evaluate(() => window.__bounce.scene.getStats());
+    // Capture one fully laid-out frame, then stop redrawing this staged fixture so a
+    // software GPU cannot starve the browser compositor while it takes the screenshot.
+    const stats = await page.evaluate(() => {
+      const { scene, sim } = window.__bounce;
+      scene.render(sim.state, 0);
+      scene.render = () => {};
+      return { ...scene.getStats(), board: scene.getBoardBounds() };
+    });
     assert.equal(await page.locator('.score-item').count(), spec.players);
     assert.deepEqual(errors, [], `${spec.name}: browser errors`);
-    await page.screenshot({ path: `${output}${spec.name}.png` });
+    await page.screenshot({ path: `${output}${spec.name}.png`, timeout: 60000 });
     report.push({ ...spec, ...stats, errors });
     console.log(JSON.stringify(report.at(-1)));
     await page.close();

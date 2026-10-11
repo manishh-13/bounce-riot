@@ -79,6 +79,11 @@ test('two phones pair, captain starts, peer input moves the TV player, reconnect
   for (const p of [host, p1, p2]) p.on('pageerror', e => errors.push(e.message));
   await joinPhone(p1, code, 'Nova');
   await joinPhone(p2, code, 'Mochi');
+  await expect(p1.locator('#controller-color-name')).toHaveText('CORAL PLAYER');
+  await expect(p2.locator('#controller-color-name')).toHaveText('BLUE PLAYER');
+  await expect(host.locator('#lobby-roster')).toContainText('1 · CORAL');
+  await expect(host.locator('#lobby-roster')).toContainText('2 · BLUE');
+  await expect(host.locator('#join-announcement')).toHaveText('Mochi is Blue · Player 2');
   await expect(host.locator('#lobby-roster .roster-player')).toHaveCount(2);
   await expect(p1.locator('#captain-action')).toBeVisible();
   await expect(p2.locator('#captain-action')).toBeHidden();

@@ -1,0 +1,35 @@
+/* Phone-only player identity: a persistent colour name in the header and the reveal inside the arming gate. */
+.identity-chip{display:flex;align-items:center;gap:5px;font-size:7px;letter-spacing:.07em;font-weight:800;margin-top:3px;color:#45563f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.identity-chip i{flex:0 0 auto;width:8px;height:8px;border-radius:50%;background:var(--player-color);box-shadow:0 0 0 1.5px #fffaf0}
+/* One headline only: the colour reveal. The gate title drops to a quiet lead-in above it. */
+.gate-card:has(.identity-reveal:not([hidden])) #gate-title{font-size:16px;line-height:1.3;color:#56664f}
+.identity-reveal{display:flex;align-items:center;gap:15px;text-align:left;margin:14px 0 18px;padding:13px 16px;background:#fffaec;border:1px solid #d9dec6;border-radius:22px;box-shadow:0 6px 0 #e4e8d2}
+.identity-preview{flex:0 0 92px;width:92px}
+.identity-mascot{display:block;width:100%;height:auto}
+.identity-copy{min-width:0;display:flex;flex-direction:column;gap:3px}
+.identity-number{font-size:9px;letter-spacing:.14em;font-weight:800;color:#56664f}
+/* The colour is the headline, in that colour. Names and labels stay pine so gold and pink read cleanly. */
+.identity-headline{display:block;font-family:'Fredoka',sans-serif;font-size:27px;font-weight:600;line-height:1.18;padding-block:2px;color:var(--player-color);-webkit-text-stroke:.7px #2c413899;text-wrap:balance}
+.identity-nickname{display:block;font-family:'Fredoka',sans-serif;font-size:18px;line-height:1.15;color:var(--ink);overflow-wrap:anywhere}
+.identity-color{font-size:12px;font-weight:800;line-height:1.35;color:var(--ink)}
+.identity-look{font-size:11px;line-height:1.45;color:#56664f}
+@media(orientation:landscape) and (max-height:600px){
+  .joy-header .identity-chip{font-size:6px;margin-top:2px;gap:4px}
+  .joy-header .identity-chip i{width:7px;height:7px}
+  .identity-reveal{gap:12px;margin:8px 0 11px;padding:9px 12px;border-radius:18px;box-shadow:0 4px 0 #e4e8d2}
+  .identity-preview{flex:0 0 64px;width:64px}
+  .identity-copy{gap:2px}
+  .identity-number{font-size:8px}
+  .gate-card:has(.identity-reveal:not([hidden])) #gate-title{font-size:14px}
+  .identity-headline{font-size:22px}
+  .identity-nickname{font-size:15px}
+  .identity-color{font-size:11px}
+  .identity-look{font-size:10px;line-height:1.35}
+}
+@media(orientation:landscape) and (max-height:400px){
+  .identity-reveal{margin:6px 0 9px;padding:8px 11px}
+  .identity-preview{flex:0 0 56px;width:56px}
+  .identity-headline{font-size:20px}
+  .identity-nickname{font-size:14px}
+  .identity-look{font-size:9px}
+}

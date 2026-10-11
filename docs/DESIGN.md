@@ -44,14 +44,20 @@ Target player count: 2 to 8 total participants, including bots. One human plus b
 These are variations of one core arena system, not three unrelated minigames. The initial build deliberately avoids full cloth simulation, complex ragdoll grabs, destructible buildings and free camera control.
 
 ## Presentation
-Warm cream background, pine-coloured UI, saturated coral primary accents and a deeper mint trampoline fabric. The game should feel like an authored toy-sports diorama. Directional lighting and a subtle material-level silhouette treatment give the characters definition without a separate outline pass. Player rings have a dark keyline, names are larger and unlit, and eight-player scores use a compact two-row TV layout. One fixed camera keeps the whole arena visible. Player numbers and names supplement colour.
+Warm cream menus and pine-coloured UI frame a vivid floating trampoline on a turquoise lagoon. The match view fills the TV with animated water, caustic light ribbons, a slim inflatable pontoon and a few floating pool toys. The fixed match camera is lower and tighter than the menu camera, making the playable board about 24% wider at 16:9 while retaining the entire edge and a clear top scoreboard. This is a presentation change only: arena radius, speed and game rules do not change.
 
-Sound effects are original Web Audio synthesis. They only begin after a user gesture. Screen shake and decorative effects are restrained; reduced-motion preferences reduce nonessential motion. Low graphics mode is available for weaker TV devices. The TV colour pass preserves the simulation, particle caps, geometry and draw-call counts in the fixed render fixtures; it does not establish equal frame time on physical TVs. Wave crests use stronger colour rather than extra bloom or full-screen flashes.
+Directional lighting and, on High graphics, a small studio environment map baked once without remote assets, give the mascots and inflatable rim soft reflections. The floor has a subtle baked fabric texture. Player rings have a dark keyline, names are unlit, and eight-player scores use a compact two-row layout. Player numbers, colour names and accessory silhouettes supplement colour.
+
+The lagoon uses one two-triangle surface with a fixed pool of eight ring-out ripples. Water motion and prop bobbing stop under reduced motion. The sky, clouds and foam-pit geometry have been removed. This reduces geometry but adds a water fragment shader and material reflections; only a physical TV benchmark can establish the final frame-time cost. Low graphics keeps the simpler water detail, smaller mesh resolution, no environment reflection sampling and no shadow map.
+
+Sound effects are original Web Audio synthesis. They only begin after a user gesture. Screen shake and decorative effects are restrained; reduced-motion preferences reduce nonessential motion. Wave crests use stronger colour rather than extra bloom or full-screen flashes.
 
 ## Scoring and fairness
 The implementation and its tests are the authority on constants. The player-facing rule is +2 for a credited knockout and a one-point penalty for an unassisted fall, with scores never below zero. Ties are resolved by knockouts, then fewer falls; an exact tie is shared. Protected respawn time prevents instant chain knockouts. Attribution has a bounded window so a much later self-fall does not award an old attacker.
 
 ## Phone experience
+After joining, the existing fullscreen gate shows "You're the coral player" (or the assigned colour), a matching lightweight SVG mascot with its accessory, the player's nickname and their number. The TV shows the same identity in the lobby and briefly announces a newcomer. The phone keeps a small colour label visible during play. No extra join step or 3D engine is loaded on the phone, and reconnecting preserves the same seat.
+
 The controller uses real Pointer Events with independent pointer capture for each thumb. Its active surface disables scroll, text selection, long-press callouts and browser touch gestures inside the controller. Safe-area insets keep controls clear of notches. Portrait and landscape both work.
 
 Android Chrome can request fullscreen. iPhone users can launch from Add to Home Screen to remove browser chrome; a normal Safari tab cannot be guaranteed immersive fullscreen. The app never claims it can block incoming calls, notifications, home gestures, browser exits or battery-saving policy.

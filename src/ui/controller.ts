@@ -1,13 +1,15 @@
-import { PLAYER_COLORS, type Phase } from '../game/types';
+import type { Phase } from '../game/types';
 import { loadServiceConfig, RoomConnection, type Transport } from '../net/room';
 import { escapeHtml, fullscreen, isIOS, isStandalone, readSaved, save, removeSaved, WakeKeeper } from './helpers';
+import { identitySvg, playerIdentity } from './player-identity';
+import './identity.css';
 
 interface ControllerStatus {
   phase: Phase; remaining: number; countdown: number; score: number; name: string; color: number;
   charge: number; cooldown: number; captain: boolean;
   players: { id: string; name: string; color: number; score: number; connected: boolean; bot?: boolean }[];
 }
-interface SavedPlayer { room: string; token: string; name: string; }
+interface SavedPlayer { room: string; token: string; name: string; slot?: number; }
 export function mountController(root: HTMLElement, roomCode: string): () => void {
   document.body.classList.add('controller-mode');
   let disposed = false;
@@ -45,14 +47,19 @@ export function mountController(root: HTMLElement, roomCode: string): () => void
       <a class="text-link" href="#home">Use this screen as the TV instead</a>
     </main>
     <section class="joypad" id="joypad" aria-label="Bounce Riot controller" hidden>
-      <header class="joy-header"><div class="player-badge"><span id="player-number">1</span><div><strong id="controller-name">Player</strong><small id="controller-connection">Connecting</small></div></div><div class="joy-score"><strong id="controller-score">0</strong><small>POINTS</small></div><button class="icon-button" id="controller-menu" aria-label="Controller menu"><span aria-hidden="true">☰</span></button></header>
+      <header class="joy-header"><div class="player-badge"><span id="player-number">1</span><div><strong id="controller-name">Player</strong><small id="controller-connection">Connecting</small><small class="identity-chip" id="controller-identity"><i aria-hidden="true"></i><span id="controller-color-name">Picking a colour</span></small></div></div><div class="joy-score"><strong id="controller-score">0</strong><small>POINTS</small></div><button class="icon-button" id="controller-menu" aria-label="Controller menu"><span aria-hidden="true">☰</span></button></header>
       <div class="joy-phase"><span id="controller-phase">Waiting for the TV</span><strong id="controller-time">GET READY</strong></div>
       <div class="control-deck" id="control-deck">
         <div class="move-zone" id="move-zone" role="application" aria-label="Movement pad: drag to move" tabindex="0"><div class="stick-label">MOVE</div><div class="stick-ring"><span class="stick-cross cross-x"></span><span class="stick-cross cross-y"></span><div class="stick-knob" id="stick-knob"><span></span></div></div><p>DRAG ANYWHERE</p></div>
         <div class="action-zone"><div class="action-label">MAKE WAVES</div><button class="slam-button" id="slam-button" aria-label="Tap to hop. Hold and release to slam"><svg class="charge-ring" viewBox="0 0 160 160" aria-hidden="true"><circle cx="80" cy="80" r="74"/></svg><span class="slam-glyph" aria-hidden="true"><i></i><i></i><i></i></span><strong id="slam-word">SLAM</strong><small id="slam-hint">HOLD + RELEASE</small></button><p>TAP TO HOP</p></div>
       </div>
       <div class="joy-bottom"><span id="joy-tip">Eyes on the TV. Thumbs right here.</span><button class="captain-action" id="captain-action" hidden>Start the round</button><span class="wake-status" id="wake-status">Screen wake: best effort</span></div>
-      <div class="controller-gate" id="controller-gate"><div class="gate-card"><span class="eyebrow">YOU'RE IN</span><h2 id="gate-title">Meet your controller.</h2><p>Left thumb moves. Tap the big button to hop.<br>Hold, then let go to make a bigger wave.</p><button class="button primary wide" id="arm-controller">Enter fullscreen & play</button><p id="fullscreen-hint" class="small-copy">Keep your eyes on the TV.</p></div></div>
+      <div class="controller-gate" id="controller-gate"><div class="gate-card"><span class="eyebrow">YOU'RE IN</span><h2 id="gate-title">Meet your controller.</h2>
+        <div class="identity-reveal" id="identity-reveal" hidden>
+          <div class="identity-preview" id="identity-preview"></div>
+          <div class="identity-copy"><span class="identity-number" id="identity-number">PLAYER 1</span><strong class="identity-headline" id="identity-headline"></strong><span class="identity-nickname" id="identity-nickname"></span><span class="identity-color" id="identity-color"></span><span class="identity-look" id="identity-look"></span></div>
+        </div>
+        <p>Left thumb moves. Tap the big button to hop.<br>Hold, then let go to make a bigger wave.</p><button class="button primary wide" id="arm-controller">Enter fullscreen & play</button><p id="fullscreen-hint" class="small-copy">Keep your eyes on the TV.</p></div></div>
       <div class="controller-sheet" id="controller-sheet" hidden><div class="sheet-body"><p class="eyebrow">TAKE A BREATHER</p><h2>Controller menu</h2><button class="button primary wide" id="resume-controller">Back to the game</button><button class="button secondary wide" id="try-fullscreen">Enter fullscreen</button><button class="button secondary wide" id="captain-pause" hidden>Pause round</button><button class="button secondary wide" id="captain-lobby" hidden>Back to lobby</button><button class="button secondary wide" id="captain-add-bot" hidden>Add a practice bot</button><button class="button secondary wide" id="captain-remove-bot" hidden>Remove a practice bot</button><button class="button secondary wide" id="vibration-toggle" aria-pressed="true">Vibration: on</button><p id="ios-install-note" class="small-copy"></p><button class="button text wide" id="leave-controller">Leave room</button><button class="button text wide" id="exit-fullscreen">Exit fullscreen</button></div></div>
       <div class="reconnect-banner" id="reconnect-banner" role="status" hidden>Finding the TV again. Your place is saved.</div>
     </section>`;
@@ -63,6 +70,24 @@ export function mountController(root: HTMLElement, roomCode: string): () => void
   const moveZone = $('#move-zone'), knob = $('#stick-knob'), slam = $<HTMLButtonElement>('#slam-button');
   const gate = $('#controller-gate'), sheet = $('#controller-sheet'), reconnect = $('#reconnect-banner');
   const phaseText = $('#controller-phase'), timeText = $('#controller-time');
+  let identitySlotNow = -1;
+  let identityName = '';
+  function applyIdentity(slot: number, nickname: string) {
+    const identity = playerIdentity(slot);
+    identitySlotNow = identity.slot;
+    identityName = nickname;
+    joy.style.setProperty('--player-color', identity.color);
+    $('#player-number').textContent = String(identity.number);
+    $('#controller-color-name').textContent = `${identity.colorName.toUpperCase()} PLAYER`;
+    $('#identity-preview').innerHTML = identitySvg(identity);
+    $('#identity-number').textContent = `PLAYER ${identity.number}`;
+    $('#identity-headline').textContent = `You're the ${identity.colorName.toLowerCase()} player.`;
+    $('#identity-nickname').textContent = nickname;
+    $('#identity-color').textContent = `${identity.colorName} mascot with the ${identity.accessoryLabel}.`;
+    $('#identity-look').textContent = 'Look at the TV and find that mascot. The name above it is yours.';
+    $('#identity-reveal').hidden = false;
+  }
+  if (saved && saved.room === initialRoom && typeof saved.slot === 'number') applyIdentity(saved.slot, saved.name ?? '');
   const wake = new WakeKeeper(active => { $('#wake-status').textContent = active ? 'SCREEN AWAKE' : 'WAKE LOCK UNAVAILABLE'; });
   function sendInput() {
     if (!joined || !connection) return;
@@ -102,9 +127,10 @@ export function mountController(root: HTMLElement, roomCode: string): () => void
   }
   function renderStatus(next: ControllerStatus) {
     status = next; lastStatus = performance.now();
-    const color = PLAYER_COLORS[Math.max(0, Math.min(7, Number(next.color) || 0))];
-    joy.style.setProperty('--player-color', color);
-    $('#controller-name').textContent = next.name || nameInput.value;
+    const identity = playerIdentity(Number(next.color));
+    const nickname = next.name || nameInput.value;
+    if (identity.slot !== identitySlotNow || nickname !== identityName) applyIdentity(identity.slot, nickname);
+    $('#controller-name').textContent = nickname;
     $('#controller-score').textContent = String(next.score ?? 0);
     phaseText.textContent = next.phase === 'lobby' ? 'THE LOBBY' : next.phase === 'countdown' ? 'READY TO RUMBLE' : next.phase === 'results' ? 'ROUND COMPLETE' : next.phase === 'paused' ? 'TAKE A BREATHER' : 'BOUNCE RIOT';
     timeText.textContent = next.phase === 'countdown' ? String(Math.max(1, Math.ceil(next.countdown))) : next.phase === 'playing' ? `${Math.max(0, Math.ceil(next.remaining))}s` : next.phase === 'results' ? `${next.score} POINTS` : next.phase === 'paused' ? 'PAUSED' : 'GET READY';
@@ -134,13 +160,13 @@ export function mountController(root: HTMLElement, roomCode: string): () => void
         onRoom: info => {
           if (disposed) return;
           joined = true;
-          save('bounce-riot-player', { room: info.room, token: info.token, name });
+          save('bounce-riot-player', { room: info.room, token: info.token, name, slot: info.slot });
           history.replaceState(null, '', `${location.pathname}${location.search}#join/${info.room}`);
           joinView.hidden = true; joy.hidden = false; message.textContent = '';
-          $('#player-number').textContent = String(info.slot + 1);
+          applyIdentity(info.slot, name);
           $('#controller-name').textContent = name;
-          joy.style.setProperty('--player-color', PLAYER_COLORS[info.slot % 8]);
-          $('#gate-title').textContent = `You're player ${info.slot + 1}.`;
+          // The seat number and colour now headline the reveal below, so the title stays a quiet lead-in.
+          $('#gate-title').textContent = 'Meet your controller.';
           if (accepted && !menuOpen && document.visibilityState === 'visible') {
             if (isStandalone() || document.fullscreenElement || !joy.requestFullscreen) { armed = true; gate.hidden = true; }
             else { armed = false; gate.hidden = false; $('#arm-controller').textContent = 'Resume controller'; }

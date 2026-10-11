@@ -330,7 +330,7 @@ export class Mascot {
   topY = 1.2;
 
   constructor(private sh: Shared, color: string, slot: number) {
-    this.bodyMat = new MeshStandardMaterial({ roughness: 0.34 });
+    this.bodyMat = new MeshStandardMaterial({ roughness: 0.29 });
     // Shape the silhouette in the existing material, without an outline pass or extra mesh.
     this.bodyMat.onBeforeCompile = shader => {
       shader.fragmentShader = shader.fragmentShader.replace('#include <opaque_fragment>', `

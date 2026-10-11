@@ -1,7 +1,8 @@
 import {
   AmbientLight, CanvasTexture, DirectionalLight, Fog, HemisphereLight, Material, Mesh, NeutralToneMapping,
-  Object3D, PCFSoftShadowMap, PerspectiveCamera, Scene, SRGBColorSpace, Texture, Vector3, WebGLRenderer,
+  Object3D, PCFSoftShadowMap, PerspectiveCamera, PMREMGenerator, Scene, SRGBColorSpace, Texture, Vector3, WebGLRenderer, WebGLRenderTarget,
 } from 'three';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import type { GameEvent, GameState, PlayerState } from '../game/types';
 import { BadgeCache } from './badges';
 import { acquireShared, Mascot, releaseShared } from './character';
@@ -11,6 +12,7 @@ import { createFloorTexture, FloorField, TrampolineFloor, type DecorWave } from 
 import { frameArena } from './framing';
 import { colorHex, slotOf, themeFor, type Quality, type ResolvedQuality } from './palette';
 import { Stage } from './stage';
+import { WATER_LEVEL } from './water';
 
 export interface ArenaSceneOptions { reducedMotion?: boolean; quality?: Quality; }
 
@@ -36,6 +38,7 @@ function supportsWebGL(): string | null {
 export class ArenaScene {
   private renderer: WebGLRenderer;
   private scene = new Scene();
+  private environment: WebGLRenderTarget | null = null;
   private camera = new PerspectiveCamera(32, 16 / 9, 0.5, 140);
   private camBase = new Vector3();
   private camTarget = new Vector3();
@@ -72,6 +75,7 @@ export class ArenaScene {
   private height = 0;
   private resizeObserver: ResizeObserver | null = null;
   private radius = 7.1;
+  private matchView = false;
 
   constructor(private container: HTMLElement, options: ArenaSceneOptions = {}) {
     this.reducedMotion = !!options.reducedMotion;
@@ -101,7 +105,7 @@ export class ArenaScene {
 
     this.scene.fog = new Fog(PAGE_BG, 30, 62);
     // A directional toy-studio look: less flat fill preserves colour on a bright TV.
-    const hemi = new HemisphereLight('#fff6e8', '#518f80', 0.95);
+    const hemi = new HemisphereLight('#fff6e8', '#518f80', 0.8);
     const ambient = new AmbientLight('#fff6e8', 0.12);
     this.key = new DirectionalLight('#fff6ea', 2.65);
     this.key.position.set(-6, 15, 9);
@@ -114,6 +118,7 @@ export class ArenaScene {
     const fill = new DirectionalLight('#cce9ff', 0.7);
     fill.position.set(9, 6, -8);
     this.scene.add(hemi, ambient, this.key, this.key.target, fill);
+    if (this.resolved === 'high') this.bakeEnvironment();
 
     this.floor = new TrampolineFloor(this.floorTexture('springyard'), Q[this.resolved].rings, Q[this.resolved].segs);
     this.floor.build(Q[this.resolved].rings, Q[this.resolved].segs, FLOOR_EXTENT);
@@ -142,19 +147,39 @@ export class ArenaScene {
     this.rebuildStage();
   }
 
+  setMatchView(active: boolean): void {
+    if (this.matchView === active) return;
+    this.matchView = active;
+    this.stage?.setMatchView(active);
+    this.resize();
+  }
+
+  getBoardBounds(): { left: number; right: number; top: number; bottom: number; width: number; height: number } {
+    this.camera.updateMatrixWorld(true);
+    const point = new Vector3();
+    let left = Infinity, right = -Infinity, top = Infinity, bottom = -Infinity;
+    for (let i = 0; i < 64; i++) {
+      const angle = i * Math.PI / 32;
+      point.set(Math.cos(angle) * this.radius, 0, Math.sin(angle) * this.radius).project(this.camera);
+      const x = (point.x + 1) * this.width / 2, y = (1 - point.y) * this.height / 2;
+      left = Math.min(left, x); right = Math.max(right, x); top = Math.min(top, y); bottom = Math.max(bottom, y);
+    }
+    return { left, right, top, bottom, width: this.width, height: this.height };
+  }
+
   resize(): void {
     if (this.disposed) return;
     const w = Math.max(1, this.container.clientWidth), h = Math.max(1, this.container.clientHeight);
     this.width = w; this.height = h;
     this.applyPixelRatio();
     this.renderer.setSize(w, h, false);
-    const { position, target } = frameArena(this.camera, w / h, this.radius);
+    const { position, target } = frameArena(this.camera, w / h, this.radius, this.matchView);
     this.camBase.copy(position);
     this.camTarget.copy(target);
     const fog = this.scene.fog as Fog;
     const dist = position.distanceTo(target);
-    fog.near = dist + 6;
-    fog.far = dist + 24;
+    fog.near = dist + 25;
+    fog.far = dist + 70;
     this.particles.setViewport(h * this.renderer.getPixelRatio(), this.camera.fov);
   }
 
@@ -220,13 +245,31 @@ export class ArenaScene {
     for (const t of this.floorTextures.values()) t.dispose();
     this.floorTextures.clear();
     this.badges.dispose();
+    this.scene.environment = null; this.environment?.dispose();
     this.renderer.dispose();
     this.renderer.forceContextLoss();
     canvas.remove();
   }
 
   private onLost = (e: Event) => { e.preventDefault(); this.lost = true; };
-  private onRestored = () => { this.lost = false; this.resize(); };
+  private onRestored = () => {
+    this.lost = false;
+    this.environment?.dispose(); this.environment = null; this.scene.environment = null;
+    if (this.resolved === 'high') this.bakeEnvironment();
+    this.resize();
+  };
+
+  private bakeEnvironment(): void {
+    // Baked once at startup, not a reflection render every frame. No network texture assets.
+    const room = new RoomEnvironment();
+    const generator = new PMREMGenerator(this.renderer);
+    try {
+      this.environment?.dispose();
+      this.environment = generator.fromScene(room, 0.04, 0.1, 100, { size: 64 });
+      this.scene.environment = this.environment.texture;
+      this.scene.environmentIntensity = 0.16;
+    } finally { room.dispose(); generator.dispose(); }
+  }
 
   private resolveQuality(q: Quality): ResolvedQuality {
     if (q !== 'auto') return q;
@@ -248,6 +291,8 @@ export class ArenaScene {
 
   private applyQuality(): void {
     const cfg = Q[this.resolved];
+    if (this.resolved === 'high' && !this.environment) this.bakeEnvironment();
+    this.scene.environment = this.resolved === 'high' ? this.environment!.texture : null;
     const wasShadows = this.renderer.shadowMap.enabled;
     this.renderer.shadowMap.enabled = cfg.shadows;
     this.key.castShadow = cfg.shadows;
@@ -308,6 +353,7 @@ export class ArenaScene {
       this.disposeTree(this.stage.group);
     }
     this.stage = new Stage(themeFor(this.themeId), this.radius, this.resolved);
+    this.stage.setMatchView(this.matchView);
     this.scene.add(this.stage.group);
   }
 
@@ -339,7 +385,7 @@ export class ArenaScene {
       if (swapped && state.events.length > 12) for (const e of state.events) this.seen.add(e.id);
       this.decor.length = 0;
       if (swapped) {
-        this.particles.clear(); this.pops.clear(); this.rings.clear(); this.shake = 0;
+        this.particles.clear(); this.pops.clear(); this.rings.clear(); this.stage?.clear(); this.shake = 0;
         this.celebrated = state.phase === 'results' ? state.round : -1;
       }
     }
@@ -457,8 +503,9 @@ export class ArenaScene {
       case 'ko': {
         const fx = e.x * 1.04, fz = e.z * 1.04;
         this.pops.spawn(fx, -0.2, fz, rm ? 1 : 1.7, color);
+        this.stage?.splash(fx, fz, rm);
         emit({ x: fx, y: -0.4, z: fz, count: 22, color, color2: '#fff1c4', speed: 4.5, up: 6, size: 0.3, life: 1.1, gravity: 9, shape: 1, drag: 0.7 });
-        emit({ x: fx, y: -0.6, z: fz, count: 10, color: '#ffffff', speed: 2.5, up: 2.5, size: 0.7, life: 0.9, gravity: 0.5, shape: 0, spread: 0.5 });
+        emit({ x: fx, y: WATER_LEVEL + 0.15, z: fz, count: 14, color: '#d8fff2', color2: '#8ce9e6', speed: 2.8, up: 5, size: 0.35, life: 0.8, gravity: 10, shape: 0, spread: 0.4 });
         this.addShake(0.16);
         const scorer = this.player(state, e.otherId);
         if (scorer) this.mascots.get(scorer.id)?.react('ko');

@@ -16,7 +16,7 @@ const cases: { arena: ArenaId; quality: 'low' | 'high'; reducedMotion: 'reduce' 
 ];
 
 for (const spec of cases) {
-  test(`${spec.arena} ${spec.quality}: coloured waves and eight mascots compile within the original geometry budget`, async ({ page }) => {
+  test(`${spec.arena} ${spec.quality}: lagoon, coloured waves and eight mascots compile within the TV budget`, async ({ page }) => {
     test.skip(!local, 'The renderer inspection surface is not shipped in production.');
     await page.setViewportSize({ width: 1280, height: 720 });
     await page.emulateMedia({ reducedMotion: spec.reducedMotion });
@@ -40,14 +40,19 @@ for (const spec of cases) {
       state.waves = [{ id: 99, owner: state.players[0].id, color: 0, x: 0, z: 0, radius: 3, prevRadius: 2.9, age: 0.5, power: 1, maxRadius: 12, hitIds: [] }];
       for (let i = 0; i < 30; i++) scene.render(state, 1 / 60);
       const stats = scene.getStats();
-      return { stats, arena: state.arena.id };
+      return { stats, arena: state.arena.id, board: scene.getBoardBounds() };
     });
     expect(result.arena).toBe(spec.arena);
     expect(result.stats.quality).toBe(spec.quality);
     expect(result.stats.calls).toBeGreaterThan(100);
-    expect(result.stats.calls).toBeLessThanOrEqual(123);
-    expect(result.stats.triangles).toBeGreaterThan(60_000);
-    expect(result.stats.triangles).toBeLessThanOrEqual(spec.quality === 'low' ? 82_000 : 236_000);
+    expect(result.stats.calls).toBeLessThanOrEqual(132);
+    expect(result.stats.triangles).toBeGreaterThan(25_000);
+    expect(result.stats.triangles).toBeLessThanOrEqual(spec.quality === 'low' ? 50_000 : 120_000);
+    expect(result.board.right - result.board.left).toBeGreaterThan(740);
+    expect(result.board.top).toBeGreaterThan(130);
+    expect(result.board.bottom).toBeLessThan(680);
+    expect(result.board.left).toBeGreaterThan(0);
+    expect(result.board.right).toBeLessThan(1280);
     expect(errors).toEqual([]);
     await expect(page.locator('#arena-view canvas')).toBeVisible();
   });
