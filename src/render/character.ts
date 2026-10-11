@@ -8,6 +8,7 @@ import type { PlayerState } from '../game/types';
 import { shade } from './palette';
 import type { FloorField } from './floor';
 import { clamp01 } from './floor';
+import { MascotMotion } from './mascot-motion';
 
 export type Expression = 'happy' | 'determined' | 'surprised' | 'sad' | 'joy' | 'dizzy';
 export type Reaction = 'hit' | 'ko' | 'ride' | 'cheer' | 'land';
@@ -99,10 +100,19 @@ function buildShared(hi: boolean): Shared {
   smile.rotateZ(Math.PI);
   const mouthO = ellipsoid(0.045, 0.055, 0.025, 12);
 
-  const arm = new CapsuleGeometry(0.075, 0.13, 4, 10);
-  arm.translate(0, -0.12, 0);
-  const foot = ellipsoid(0.14, 0.085, 0.19, hi ? 16 : 10);
-  foot.translate(0, 0.075, 0.035);
+  // One mesh per arm still: upper arm, forearm and mitt are merged and the elbow bends in the shader.
+  const upper = new CapsuleGeometry(0.072, 0.05, 4, hi ? 14 : 10); upper.translate(0, -0.05, 0);
+  const fore = new CapsuleGeometry(0.06, 0.045, 4, hi ? 14 : 10); fore.translate(0, -0.145, 0);
+  const mitt = ellipsoid(0.078, 0.072, 0.076, hi ? 16 : 10); mitt.translate(0, -0.235, 0.008);
+  const arm = merge([upper, fore, mitt]);
+
+  // A boot: sole, toe cap, ankle shaft and a cuff rim. The sole bottom stays at the old foot bottom
+  // so feetY and the ground contact are unchanged.
+  const sole = ellipsoid(0.145, 0.045, 0.2, hi ? 16 : 10); sole.translate(0, 0.035, 0.04);
+  const toe = ellipsoid(0.115, 0.058, 0.085, hi ? 14 : 10); toe.translate(0, 0.058, 0.125);
+  const shaft = ellipsoid(0.112, 0.085, 0.125, hi ? 16 : 10); shaft.translate(0, 0.1, 0.012);
+  const cuff = new TorusGeometry(0.1, 0.022, 6, hi ? 18 : 12); cuff.rotateX(Math.PI / 2); cuff.translate(0, 0.168, 0.012);
+  const foot = merge([sole, toe, shaft, cuff]);
 
   const crownParts: BufferGeometry[] = [colored(new CylinderGeometry(0.2, 0.18, 0.12, 16, 1, true), '#ffc93c')];
   for (let i = 0; i < 5; i++) {
@@ -123,9 +133,9 @@ function buildShared(hi: boolean): Shared {
   return {
     body, belly, eyes, cheeks, brow, smile, mouthO, arm, foot, crown, shield,
     accessories: buildAccessories(hi),
-    vcMat: new MeshStandardMaterial({ vertexColors: true, roughness: 0.38 }),
-    cheekMat: new MeshStandardMaterial({ color: '#ff8f9c', roughness: 0.7, transparent: true, opacity: 0.75, depthWrite: false }),
-    darkMat: new MeshStandardMaterial({ color: '#3a2324', roughness: 0.6 }),
+    vcMat: new MeshStandardMaterial({ vertexColors: true, roughness: 0.54 }),
+    cheekMat: new MeshStandardMaterial({ color: '#ff8f9c', roughness: 0.85, transparent: true, opacity: 0.75, depthWrite: false }),
+    darkMat: new MeshStandardMaterial({ color: '#3a2324', roughness: 0.72 }),
     crownMat: new MeshStandardMaterial({ vertexColors: true, roughness: 0.25, metalness: 0.45, emissive: '#7a4b00', emissiveIntensity: 0.25 }),
   };
 }
@@ -211,6 +221,89 @@ export function releaseShared(): void {
   shared = null;
   for (const g of [s.body, s.belly, s.eyes, s.cheeks, s.brow, s.smile, s.mouthO, s.arm, s.foot, s.crown, s.shield, ...s.accessories]) g.dispose();
   for (const m of [s.vcMat, s.cheekMat, s.darkMat, s.crownMat]) m.dispose();
+}
+
+// A tactile matte surface for the mascot bodies: hashed clay grain plus a fine fabric thread,
+// patched into the standard material so there is no texture asset and no extra pass. One shared
+// patch function means every mascot material resolves to the same cached program.
+const CLAY_PARS = /* glsl */`
+  varying vec3 vClayPos;
+`;
+
+const CLAY_NOISE = /* glsl */`
+  float clayHash(vec3 p) {
+    p = fract(p * 0.3183099 + vec3(0.71, 0.113, 0.419));
+    p *= 17.0;
+    return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+  }
+  float clayNoise(vec3 p) {
+    vec3 i = floor(p);
+    vec3 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    return mix(
+      mix(mix(clayHash(i), clayHash(i + vec3(1.0, 0.0, 0.0)), f.x),
+          mix(clayHash(i + vec3(0.0, 1.0, 0.0)), clayHash(i + vec3(1.0, 1.0, 0.0)), f.x), f.y),
+      mix(mix(clayHash(i + vec3(0.0, 0.0, 1.0)), clayHash(i + vec3(1.0, 0.0, 1.0)), f.x),
+          mix(clayHash(i + vec3(0.0, 1.0, 1.0)), clayHash(i + vec3(1.0, 1.0, 1.0)), f.x), f.y), f.z);
+  }
+`;
+
+// Object space, so the grain never swims when the mascot squashes, leans or scales in.
+function clayVertex(src: string): string {
+  return src
+    .replace('#include <common>', `${CLAY_PARS}#include <common>`)
+    .replace('#include <begin_vertex>', `#include <begin_vertex>
+      vClayPos = transformed;`);
+}
+
+function clayFragment(src: string): string {
+  return src
+    .replace('#include <common>', `${CLAY_PARS}${CLAY_NOISE}#include <common>`)
+    .replace('#include <color_fragment>', `#include <color_fragment>
+      float clayGrain = clayNoise(vClayPos * 46.0);
+      float clayThread = 0.5 + 0.5 * sin(vClayPos.y * 190.0 + clayGrain * 7.0);
+      float clayMicro = mix(clayGrain, clayThread, 0.35) - 0.5;
+      diffuseColor.rgb *= 1.0 + clayMicro * 0.06;`)
+    .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
+      roughnessFactor = clamp(roughnessFactor + clayMicro * 0.22, 0.08, 1.0);`)
+    // Shape the silhouette and add a felt fuzz at the grazing edge, with no outline pass or extra mesh.
+    .replace('#include <opaque_fragment>', `
+      float clayFacing = abs(dot(normalize(normal), normalize(vViewPosition)));
+      float clayEdge = smoothstep(0.06, 0.55, clayFacing);
+      outgoingLight *= mix(0.64, 1.0, clayEdge);
+      outgoingLight += diffuseColor.rgb * (1.0 - clayEdge) * 0.07 * (0.5 + clayMicro);
+      #include <opaque_fragment>`);
+}
+
+function clayPatch(shader: { vertexShader: string; fragmentShader: string }): void {
+  shader.vertexShader = clayVertex(shader.vertexShader);
+  shader.fragmentShader = clayFragment(shader.fragmentShader);
+}
+
+// The elbow: the forearm half of the merged arm geometry rotates about a fixed pivot, so an arm
+// articulates without a second mesh or a skeleton. Both arms of a mascot share the material and
+// therefore the same bend, which is what the walk and the landing recovery want anyway.
+const ELBOW_PARS = /* glsl */`
+  uniform float uElbow;
+  // smoothstep with edge0 > edge1 is undefined in GLSL, so the band is inverted explicitly.
+  float elbowWeight(float y) { return 1.0 - smoothstep(-0.175, -0.035, y); }
+  vec3 elbowTwist(vec3 v, float a) {
+    float c = cos(a), s = sin(a);
+    return vec3(v.x, v.y * c - v.z * s, v.y * s + v.z * c);
+  }
+`;
+
+function elbowVertex(src: string): string {
+  return src
+    .replace('#include <common>', `${ELBOW_PARS}#include <common>`)
+    .replace('#include <beginnormal_vertex>', `#include <beginnormal_vertex>
+      objectNormal = elbowTwist(objectNormal, -uElbow * elbowWeight(position.y));`)
+    .replace('#include <morphtarget_vertex>', `#include <morphtarget_vertex>
+      {
+        float elbowA = -uElbow * elbowWeight(position.y);
+        vec3 pivot = vec3(0.0, -0.105, 0.0);
+        transformed = elbowTwist(transformed - pivot, elbowA) + pivot;
+      }`);
 }
 
 const DECAL_VERT = /* glsl */`
@@ -318,7 +411,10 @@ export class Mascot {
   private squashVel = 0;
   private prevGrounded = true;
   private prevVy = 0;
-  private walk = 0;
+  private prevSlam = false;
+  private pendingImpact = 0;
+  private motion: MascotMotion;
+  private elbowU = { value: 0 };
   private yawNow = 0;
   private blinkIn = 2 + Math.random() * 3;
   private blinkT = 0;
@@ -330,18 +426,20 @@ export class Mascot {
   topY = 1.2;
 
   constructor(private sh: Shared, color: string, slot: number) {
-    this.bodyMat = new MeshStandardMaterial({ roughness: 0.29 });
-    // Shape the silhouette in the existing material, without an outline pass or extra mesh.
-    this.bodyMat.onBeforeCompile = shader => {
-      shader.fragmentShader = shader.fragmentShader.replace('#include <opaque_fragment>', `
-        float facing = abs(dot(normalize(normal), normalize(vViewPosition)));
-        outgoingLight *= mix(0.64, 1.0, smoothstep(0.06, 0.55, facing));
-        #include <opaque_fragment>`);
+    // Matte clay and fabric: high roughness carries the look, the shader patch adds the grain.
+    this.bodyMat = new MeshStandardMaterial({ roughness: 0.52 });
+    this.bodyMat.onBeforeCompile = clayPatch;
+    this.bellyMat = new MeshStandardMaterial({ roughness: 0.68 });
+    this.bellyMat.onBeforeCompile = clayPatch;
+    this.limbMat = new MeshStandardMaterial({ roughness: 0.58 });
+    this.limbMat.onBeforeCompile = shader => {
+      shader.uniforms.uElbow = this.elbowU;
+      shader.vertexShader = elbowVertex(clayVertex(shader.vertexShader));
+      shader.fragmentShader = clayFragment(shader.fragmentShader);
     };
-    this.bellyMat = new MeshStandardMaterial({ roughness: 0.55 });
-    this.limbMat = new MeshStandardMaterial({ roughness: 0.45 });
-    this.footMat = new MeshStandardMaterial({ roughness: 0.5 });
-    this.browMat = new MeshStandardMaterial({ roughness: 0.6 });
+    this.footMat = new MeshStandardMaterial({ roughness: 0.62 });
+    this.footMat.onBeforeCompile = clayPatch;
+    this.browMat = new MeshStandardMaterial({ roughness: 0.72 });
     this.setColor(color);
 
     const cast = <T extends Mesh>(m: T, c = true) => { m.castShadow = c; return m; };
@@ -418,6 +516,7 @@ export class Mascot {
     this.badge = new Sprite(new SpriteMaterial({ depthTest: false, depthWrite: false, transparent: true, toneMapped: false }));
     this.badge.renderOrder = 10;
     this.badge.center.set(0.5, 0);
+    this.motion = new MascotMotion(this.seed);
   }
 
   setColor(color: string): void {
@@ -443,7 +542,7 @@ export class Mascot {
     this.reactT = kind === 'ko' ? 1.1 : kind === 'cheer' ? 1.6 : 0.7;
     if (kind === 'hit') this.squashVel -= 3;
     if (kind === 'ride') this.squashVel += 2.5;
-    if (kind === 'land') this.squashVel -= 2.4;
+    if (kind === 'land') { this.squashVel -= 2.4; this.pendingImpact = Math.max(this.pendingImpact, 7); }
   }
 
   update(p: PlayerState, f: MascotFrame): void {
@@ -452,7 +551,11 @@ export class Mascot {
     this.visibleScale += ((hidden ? 0 : 1) - this.visibleScale) * Math.min(1, dt * (hidden ? 18 : 10));
     const vis = this.visibleScale > 0.02;
     this.root.visible = vis; this.decal.visible = vis; this.badge.visible = vis;
-    if (!vis) { this.prevGrounded = true; this.squash = 0; this.squashVel = 0; return; }
+    if (!vis) {
+      this.prevGrounded = true; this.squash = 0; this.squashVel = 0; this.pendingImpact = 0;
+      this.motion.reset(); this.elbowU.value = 0;
+      return;
+    }
 
     const charge = clamp01(p.charge);
     const speed = Math.hypot(p.vx, p.vz);
@@ -464,15 +567,34 @@ export class Mascot {
     feet += hop;
     this.feetY = feet;
 
-    if (p.grounded && !this.prevGrounded) this.squashVel -= Math.min(1, Math.abs(this.prevVy) / 9) * 5 + 0.8;
+    const touchdown = p.grounded && !this.prevGrounded;
+    if (touchdown) this.squashVel -= Math.min(1, Math.abs(this.prevVy) / 9) * 5 + 0.8;
     if (!p.grounded && this.prevGrounded) this.squashVel += 3;
+    let landImpact = this.pendingImpact;
+    this.pendingImpact = 0;
+    if (touchdown) landImpact = Math.max(landImpact, Math.abs(this.prevVy));
+    const slamLanding = this.prevSlam && touchdown;
     this.prevGrounded = p.grounded;
     this.prevVy = p.vy;
+    this.prevSlam = p.slamming;
+
+    let diff = f.facing - this.yawNow;
+    diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+    const yawStep = diff * Math.min(1, dt * 12);
+    this.yawNow += yawStep;
+    this.yaw.rotation.y = this.yawNow;
+    const turnRate = dt > 0 ? yawStep / dt : 0;
+
+    const pose = this.motion.step({
+      dt, speed, grounded: p.grounded, charge, slamming: p.slamming || slamLanding,
+      vy: p.vy, turnRate, landImpact, reducedMotion: f.reducedMotion,
+    });
 
     let target = 0;
     if (p.grounded) target = -0.34 * charge;
     else target = Math.min(0.22, Math.abs(p.vy) * 0.022);
     if (p.slamming) target = 0.3;
+    if (p.grounded && !p.slamming) target -= pose.recovery * 0.07;
     if (f.phase === 'lobby' || f.phase === 'results') target += f.reducedMotion ? 0 : Math.sin(f.time * 2.3 + this.seed) * 0.025;
     const k = 170, c = 13;
     this.squashVel += (-(this.squash - target) * k - this.squashVel * c) * dt;
@@ -482,16 +604,7 @@ export class Mascot {
     const vs = this.visibleScale;
     this.squashG.scale.set(sxz * vs, sy * vs, sxz * vs);
 
-    let diff = f.facing - this.yawNow;
-    diff = Math.atan2(Math.sin(diff), Math.cos(diff));
-    this.yawNow += diff * Math.min(1, dt * 12);
-    this.yaw.rotation.y = this.yawNow;
-
-    const moveAmt = Math.min(1, speed / 3.5);
-    if (p.grounded) this.walk += dt * (4 + speed * 3.2) * (moveAmt > 0.05 ? 1 : 0);
-    const sw = Math.sin(this.walk);
-    const bob = p.grounded ? Math.abs(sw) * 0.035 * moveAmt : 0;
-    this.tiltG.position.y = bob;
+    this.tiltG.position.y = (p.grounded ? pose.bob : 0) - pose.crouch;
     let lean = Math.min(0.22, speed * 0.04) + charge * 0.16;
     if (p.slamming) lean = -0.1;
     this.tiltG.rotation.x += (lean - this.tiltG.rotation.x) * Math.min(1, dt * 10);
@@ -500,11 +613,13 @@ export class Mascot {
     const falling = !inside && p.y < -0.3;
     if (falling && !f.reducedMotion) roll = Math.sin(f.time * 9) * 0.5;
     if (charge >= 0.98 && !f.reducedMotion) roll += Math.sin(f.time * 47) * 0.025;
-    this.tiltG.rotation.z = roll;
+    this.tiltG.rotation.z = roll + pose.turnLean;
 
-    const footLift = p.grounded ? 1 : 0;
-    this.footL.position.set(-0.18, footLift * Math.max(0, sw) * 0.07 * moveAmt + (p.grounded ? 0 : 0.05), sw * 0.12 * moveAmt);
-    this.footR.position.set(0.18, footLift * Math.max(0, -sw) * 0.07 * moveAmt + (p.grounded ? 0 : 0.05), -sw * 0.12 * moveAmt);
+    this.footL.position.set(-0.18 - pose.footSplay, pose.footLiftL, pose.footStepL);
+    this.footR.position.set(0.18 + pose.footSplay, pose.footLiftR, pose.footStepR);
+    // Positive ankle pitch lifts the toe, so a boot never pitches its sole through the floor.
+    this.footL.rotation.x = -pose.anklePitchL;
+    this.footR.rotation.x = -pose.anklePitchR;
     const footSquash = 1 - Math.min(0, this.squash) * 0.6;
     this.footL.scale.set(footSquash, 1, 1); this.footR.scale.set(footSquash, 1, 1);
 
@@ -524,10 +639,10 @@ export class Mascot {
     }
     this.applyExpression(expr, f);
 
-    const swing = p.grounded ? sw * 0.5 * moveAmt : 0;
-    const base = 0.32 + armsUp * 2.1;
-    this.armL.rotation.set(swing, 0, -base);
-    this.armR.rotation.set(-swing, 0, base);
+    const base = 0.32 + armsUp * 2.1 + pose.shoulderLift;
+    this.armL.rotation.set(pose.armSwing, 0, -base);
+    this.armR.rotation.set(-pose.armSwing, 0, base);
+    this.elbowU.value = pose.elbowBend;
 
     this.crown.visible = f.winner && f.phase === 'results';
     const flash = clamp01(p.hitFlash * 2.5);

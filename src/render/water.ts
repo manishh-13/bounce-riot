@@ -15,7 +15,6 @@ const vertex = /* glsl */`
 const fragment = /* glsl */`
   uniform float uTime;
   uniform float uRadius;
-  uniform float uFull;
   uniform vec3 uDeep;
   uniform vec3 uShallow;
   uniform vec3 uFoam;
@@ -35,15 +34,15 @@ const fragment = /* glsl */`
     float distanceToBoard = length(p);
     float shallow = 1.0 - smoothstep(uRadius + 1.5, uRadius + 14.0, distanceToBoard);
     vec3 color = mix(uDeep, uShallow, 0.22 + shallow * 0.48 + swell * 0.07);
-    color = mix(color, vec3(0.48, 0.8, 0.84), fresnel * 0.32);
+    color = mix(color, vec3(0.38, 0.54, 0.5), fresnel * 0.32);
 
     // Moving caustic ribbons, no reflection buffer or post-processing pass.
     float ribbons = abs(sin(a * 2.7 + sin(b * 1.6) * 0.9) + sin(b * 2.4 + sin(c) * 0.7));
     float caustic = 1.0 - smoothstep(0.025, 0.15, ribbons);
-    color += vec3(0.05, 0.13, 0.11) * caustic * (0.35 + 0.65 * shallow);
+    color += vec3(0.027, 0.065, 0.046) * caustic * (0.35 + 0.65 * shallow);
     #if HIGH_WATER == 1
       float fine = abs(sin(c * 2.2 + sin(a)) + sin(a * 1.7 - sin(b)));
-      color += vec3(0.035, 0.09, 0.07) * (1.0 - smoothstep(0.01, 0.065, fine)) * 0.45;
+      color += vec3(0.015, 0.035, 0.025) * (1.0 - smoothstep(0.01, 0.065, fine)) * 0.45;
     #endif
 
     vec3 halfLight = normalize(normalize(vec3(-0.45, 0.9, -0.3)) + view);
@@ -72,9 +71,7 @@ const fragment = /* glsl */`
         color = mix(color, uFoam, (ring + inner * 0.35) * (1.0 - progress) * splash.w * 0.8);
       }
     }
-    float alpha = mix(1.0 - smoothstep(uRadius + 5.0, uRadius + 15.0, distanceToBoard), 1.0, uFull);
-    if (alpha < 0.01) discard;
-    gl_FragColor = vec4(color, alpha);
+    gl_FragColor = vec4(color, 1.0);
     #include <colorspace_fragment>
   }`;
 
@@ -88,11 +85,11 @@ export class LagoonWater {
 
   constructor(radius: number, quality: ResolvedQuality) {
     this.material = new ShaderMaterial({
-      vertexShader: vertex, fragmentShader: fragment, transparent: true, depthWrite: false, toneMapped: false,
+      vertexShader: vertex, fragmentShader: fragment, transparent: false, depthWrite: true, toneMapped: false,
       defines: { HIGH_WATER: quality === 'high' ? 1 : 0 },
       uniforms: {
-        uTime: { value: 0 }, uRadius: { value: radius }, uFull: { value: 0 },
-        uDeep: { value: new Color('#148ca8') }, uShallow: { value: new Color('#42c7c5') },
+        uTime: { value: 0 }, uRadius: { value: radius },
+        uDeep: { value: new Color('#20565f') }, uShallow: { value: new Color('#428f89') },
         uFoam: { value: new Color('#d8fff2') }, uSplashes: { value: this.splashes },
       },
     });
@@ -104,8 +101,6 @@ export class LagoonWater {
     this.mesh.renderOrder = -20;
     this.mesh.frustumCulled = false;
   }
-
-  setMatchView(active: boolean): void { this.material.uniforms.uFull.value = active ? 1 : 0; }
 
   splash(x: number, z: number, reducedMotion: boolean): void {
     if (reducedMotion || !Number.isFinite(x) || !Number.isFinite(z)) return;

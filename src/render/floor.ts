@@ -243,58 +243,40 @@ export function createFloorTexture(theme: ArenaTheme, size: number, radius: numb
   ctx.fillStyle = grad;
   ctx.beginPath(); ctx.arc(c, c, R * 1.05, 0, Math.PI * 2); ctx.fill();
 
+  // Woven, slightly weathered canvas. Its texture is baked, never generated per frame.
   ctx.save();
-  ctx.globalAlpha = 0.09;
-  ctx.fillStyle = theme.cream;
-  for (let i = 0; i < 16; i += 2) {
-    const a0 = (i / 16) * Math.PI * 2 - Math.PI / 2, a1 = ((i + 1) / 16) * Math.PI * 2 - Math.PI / 2;
-    ctx.beginPath(); ctx.moveTo(c, c); ctx.arc(c, c, R * 0.9, a0, a1); ctx.closePath(); ctx.fill();
-  }
-  ctx.restore();
-
-  // Fine woven rubber texture, baked once and mipmapped so it does not shimmer at TV distance.
-  ctx.save();
-  ctx.globalAlpha = 0.045;
-  ctx.strokeStyle = '#173b31';
-  ctx.lineWidth = 0.6;
-  for (let v = 0; v < size; v += 5) {
+  ctx.globalAlpha = 0.085; ctx.strokeStyle = '#233c31'; ctx.lineWidth = 0.7;
+  for (let v = 0; v < size; v += 4) {
     ctx.beginPath(); ctx.moveTo(v, 0); ctx.lineTo(v, size); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(0, v); ctx.lineTo(size, v); ctx.stroke();
   }
+  let noise = 91;
+  for (let i = 0; i < 2400; i++) {
+    noise = (Math.imul(noise, 1664525) + 1013904223) >>> 0;
+    const x = noise / 4294967296 * size;
+    noise = (Math.imul(noise, 1664525) + 1013904223) >>> 0;
+    const y = noise / 4294967296 * size;
+    ctx.fillStyle = i % 2 ? '#142f29' : '#fff4d6';
+    ctx.fillRect(x, y, 1.3, 0.7);
+  }
   ctx.restore();
 
-  ctx.strokeStyle = theme.line;
-  ctx.lineCap = 'round';
-  ctx.lineWidth = px(0.09);
-  for (const f of [0.36, 0.64]) { ctx.beginPath(); ctx.arc(c, c, R * f, 0, Math.PI * 2); ctx.stroke(); }
-
-  ctx.fillStyle = theme.line;
-  const dots = 64;
-  for (let i = 0; i < dots; i++) {
-    const a = (i / dots) * Math.PI * 2;
-    ctx.beginPath(); ctx.arc(c + Math.cos(a) * R * 0.85, c + Math.sin(a) * R * 0.85, px(0.055), 0, Math.PI * 2); ctx.fill();
-  }
-
-  const blocks = 32;
-  const inner = R * 0.9, outer = R * 1.02;
-  for (let i = 0; i < blocks; i++) {
-    const a0 = (i / blocks) * Math.PI * 2, a1 = ((i + 1) / blocks) * Math.PI * 2;
-    ctx.fillStyle = i % 2 ? theme.cream : theme.accent;
-    ctx.beginPath(); ctx.arc(c, c, outer, a0, a1); ctx.arc(c, c, inner, a1, a0, true); ctx.closePath(); ctx.fill();
-  }
-  ctx.strokeStyle = theme.line; ctx.lineWidth = px(0.05);
-  ctx.beginPath(); ctx.arc(c, c, inner, 0, Math.PI * 2); ctx.stroke();
-
+  ctx.strokeStyle = theme.line; ctx.globalAlpha = 0.34; ctx.lineWidth = px(0.045);
+  ctx.beginPath(); ctx.arc(c, c, R * 0.64, 0, Math.PI * 2); ctx.stroke();
+  ctx.globalAlpha = 0.72;
+  ctx.setLineDash([px(0.1), px(0.075)]); ctx.lineWidth = px(0.035);
+  for (const f of [0.96, 0.98]) { ctx.beginPath(); ctx.arc(c, c, R * f, 0, Math.PI * 2); ctx.stroke(); }
+  ctx.setLineDash([]); ctx.globalAlpha = 1;
+  ctx.strokeStyle = theme.cream; ctx.lineWidth = px(0.13);
+  ctx.beginPath(); ctx.arc(c, c, R * 1.002, 0, Math.PI * 2); ctx.stroke();
+  ctx.globalAlpha = 0.62;
   for (let i = 0; i < 8; i++) {
-    const a = (i / 8) * Math.PI * 2 + Math.PI / 8;
-    const sx = c + Math.cos(a) * R * 0.64, sy = c + Math.sin(a) * R * 0.64;
-    ctx.fillStyle = theme.cream; ctx.globalAlpha = 0.9;
-    ctx.beginPath(); ctx.arc(sx, sy, px(0.3), 0, Math.PI * 2); ctx.fill();
-    ctx.globalAlpha = 1; ctx.fillStyle = theme.floorOuter;
-    ctx.beginPath(); ctx.arc(sx, sy, px(0.17), 0, Math.PI * 2); ctx.fill();
+    const a = i * Math.PI / 4 + Math.PI / 8, rr = R * 0.64;
+    ctx.beginPath(); ctx.arc(c + Math.cos(a) * rr, c + Math.sin(a) * rr, px(0.10), 0, Math.PI * 2); ctx.fillStyle = theme.cream; ctx.fill();
   }
-
+  ctx.globalAlpha = 0.66;
   drawEmblem(ctx, theme, c, px);
+  ctx.globalAlpha = 1;
 
   const tex = new CanvasTexture(canvas);
   tex.colorSpace = SRGBColorSpace;

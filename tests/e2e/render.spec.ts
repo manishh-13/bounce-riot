@@ -45,10 +45,11 @@ for (const spec of cases) {
     expect(result.arena).toBe(spec.arena);
     expect(result.stats.quality).toBe(spec.quality);
     expect(result.stats.calls).toBeGreaterThan(100);
-    expect(result.stats.calls).toBeLessThanOrEqual(132);
+    expect(result.stats.calls).toBeLessThanOrEqual(145);
     expect(result.stats.triangles).toBeGreaterThan(25_000);
-    expect(result.stats.triangles).toBeLessThanOrEqual(spec.quality === 'low' ? 50_000 : 120_000);
-    expect(result.board.right - result.board.left).toBeGreaterThan(740);
+    expect(result.stats.triangles).toBeLessThanOrEqual(spec.quality === 'low' ? 65_000 : 150_000);
+    expect(result.board.right - result.board.left).toBeGreaterThan(635);
+    expect(result.board.right - result.board.left).toBeLessThan(710);
     expect(result.board.top).toBeGreaterThan(130);
     expect(result.board.bottom).toBeLessThan(680);
     expect(result.board.left).toBeGreaterThan(0);

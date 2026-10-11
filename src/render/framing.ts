@@ -27,18 +27,18 @@ function bounds(cam: PerspectiveCamera, points: Vector3[]): [number, number, num
 }
 
 // Fixed camera, with a lower match angle to use TV width while protecting the top HUD.
-export function frameArena(cam: PerspectiveCamera, aspect: number, radius: number, matchView = false): { position: Vector3; target: Vector3 } {
+export function frameArena(cam: PerspectiveCamera, aspect: number, radius: number, matchView = false, titleView = false): { position: Vector3; target: Vector3 } {
   cam.aspect = aspect;
   const portrait = MathUtils.clamp((1.35 - aspect) / 0.8, 0, 1);
   cam.fov = MathUtils.lerp(30, 38, portrait);
   cam.updateProjectionMatrix();
-  const elev = MathUtils.degToRad(MathUtils.lerp(matchView ? 35 : 49, 64, portrait));
+  const elev = MathUtils.degToRad(MathUtils.lerp(matchView ? 39 : 46, 64, portrait));
   const dir = new Vector3(0, Math.sin(elev), Math.cos(elev));
   const target = new Vector3(0, -0.2, 0);
   const points = samplePoints(radius);
   const marginX = 0.95;
-  const topInset = matchView ? MathUtils.lerp(0.15, 0.23, portrait) : 0.05;
-  const bottomInset = matchView ? MathUtils.lerp(0.035, 0.12, portrait) : 0.05;
+  const topInset = matchView ? MathUtils.lerp(0.16, 0.23, portrait) : 0.05;
+  const bottomInset = matchView ? MathUtils.lerp(0.075, 0.12, portrait) : 0.05;
   const marginY = 1 - topInset - bottomInset;
   const centreY = bottomInset - topInset;
   let dist = 24;
@@ -59,6 +59,10 @@ export function frameArena(cam: PerspectiveCamera, aspect: number, radius: numbe
     const centre = (y0 + y1) / 2 - centreY;
     const worldPerNdc = Math.tan(MathUtils.degToRad(cam.fov / 2)) * dist;
     target.z -= (centre * worldPerNdc) / Math.sin(elev);
+  }
+  if (titleView) {
+    dist *= aspect > 1.3 ? 1.22 : 1.55;
+    if (aspect > 1.3) target.x = -radius * 0.67;
   }
   cam.position.copy(target).addScaledVector(dir, dist);
   cam.lookAt(target);

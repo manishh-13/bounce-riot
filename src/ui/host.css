@@ -1,0 +1,72 @@
+/* A compact, tactile game menu in an original island diorama. Phone controller styles stay separate. */
+body.host-mode{background:#234d4f;color:#fff2d6}
+.host-mode #app .host-shell{background:#234d4f;min-height:540px;height:100dvh}
+.host-mode #app .arena-view{inset:0;width:100%;height:100%;display:block}
+.host-mode #app .arena-view:after{display:none}
+.host-mode #app .host-shell:before{content:'';position:absolute;inset:0;z-index:1;pointer-events:none;background:radial-gradient(ellipse at 59% 49%,transparent 30%,#071d2452 100%)}
+.host-mode #app.title-screen .host-shell:after{content:'';position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(90deg,#102d32cc 0%,#173e3f8c 25%,transparent 61%)}
+.host-mode .host-header{height:88px;padding:18px 3.4%;z-index:10}
+.host-mode .header-right>.tiny-label{display:none}
+.host-mode .host-header .wordmark{color:#fff3d7;font-size:22px;text-shadow:0 2px 0 #122b2d}
+.host-mode .host-header .wordmark>span{font-size:29px;color:#edb560}
+.host-mode .host-header .logo-dot{background:#edb560}
+.host-mode .title-screen .host-header .wordmark{visibility:hidden}
+.host-mode .host-header .icon-button{color:#fff1cf;background:#224a49d9;border:1px solid #b49a696b;border-radius:7px;box-shadow:0 3px 0 #0d2529;font-size:10px;min-height:36px}
+.host-mode .host-header .icon-button:hover{background:#38645b}
+.host-mode button:focus-visible,.host-mode a:focus-visible,.host-mode select:focus-visible{outline:3px solid #ffe0a0;outline-offset:4px}
+.host-mode .home-panel{left:7%;top:50%;transform:translateY(-50%);width:min(29vw,340px);z-index:3;pointer-events:auto}
+.host-mode .menu-kicker{font-size:9px;font-weight:800;letter-spacing:.2em;color:#d0d8bb;text-align:center;margin-bottom:16px}
+.host-mode .home-panel .game-title{font-family:'Fredoka',sans-serif;text-align:center;line-height:.84;letter-spacing:-.035em;margin:0;font-size:clamp(40px,4vw,66px);color:#fff0c9;filter:drop-shadow(0 5px 0 #112c2f)}
+.host-mode .game-title>span{display:block;font-weight:600;text-shadow:1px 1px 0 #876d47,-1px -1px 0 #fff9e6}
+.host-mode .game-title>strong{display:block;color:#eeb05c;font-size:1.35em;letter-spacing:.015em;margin-top:7px;text-shadow:1px 2px 0 #815535,-1px -1px 0 #ffe0a6}
+.host-mode .menu-tagline{text-align:center;color:#e7dfc4;font-size:13px;font-weight:700;margin:18px 0 24px;letter-spacing:.02em}
+.host-mode .game-menu{display:flex;flex-direction:column;gap:10px}
+.host-mode .menu-action{position:relative;display:grid;grid-template-columns:1fr auto;align-items:center;row-gap:2px;text-align:left;width:100%;padding:12px 21px 12px 24px;min-height:66px;text-decoration:none;background:linear-gradient(174deg,#476753,#2d5245);border:1px solid #728361;border-bottom:4px solid #15372e;border-radius:10px 7px 12px 8px;box-shadow:0 4px 0 #0e282a66,inset 0 1px 0 #b8c3a236;color:#fff4d9;transition:transform .13s,background .13s}
+.host-mode .menu-action>span{font-family:'Fredoka',sans-serif;font-size:25px;font-weight:600;line-height:1.05;text-shadow:0 2px 0 #14362d}
+.host-mode .menu-action>small{grid-column:1;font-size:10px;font-weight:700;color:#d1dcbf;letter-spacing:.03em}
+.host-mode .menu-action>b{grid-column:2;grid-row:1/3;font-size:22px;color:#dfd1a7;font-weight:400}
+.host-mode .menu-action:hover,.host-mode .menu-action:focus-visible{background:linear-gradient(174deg,#64825d,#365d49);transform:translateX(3px)}
+.host-mode .menu-action:active{transform:translateY(2px)}
+.host-mode .menu-play{background:linear-gradient(175deg,#e3b565,#b9853d);border-color:#efcf91;border-bottom-color:#74532e;color:#273b2e}
+.host-mode .menu-play>span{text-shadow:0 1px 0 #f9d994}
+.host-mode .menu-play>small,.host-mode .menu-play>b{color:#49502f}
+.host-mode .menu-play:hover,.host-mode .menu-play:focus-visible{background:linear-gradient(175deg,#f0c879,#ca984d)}
+.host-mode .menu-utilities{display:flex;justify-content:center;gap:28px;padding-top:12px}
+.host-mode .menu-utilities button{background:none;color:#f1e4c7;font-weight:800;font-size:12px;padding:7px 0;text-shadow:0 2px 0 #173d3c}
+.host-mode .menu-utilities button:hover{text-decoration:underline}
+.host-mode .menu-footnote{font-size:9px;text-align:center;color:#b9cbbb;margin-top:18px;font-weight:700}
+.host-mode .host-footer{padding:16px 3.4%;font-size:8px;color:#e2dfc6;z-index:5;letter-spacing:.09em}
+.host-mode .host-footer .text-button{font-size:8px;color:#e2dfc6}
+.host-mode .host-footer #fps-counter{font-size:8px;color:#b9cfbf}
+.host-mode .lobby-panel{top:100px;bottom:32px;left:4%;width:min(38%,530px);padding:22px 25px;background:#f4e7c9f2;border:1px solid #b7a47b;border-radius:18px;color:#263c31;box-shadow:0 12px 28px #08272942}
+.host-mode .lobby-panel h1{font-size:clamp(30px,3vw,44px)}
+.host-mode .lobby-panel>.eyebrow{font-size:9px;margin-bottom:8px}
+.host-mode .lobby .arena-view{left:32%!important;width:68%!important;height:100%!important}
+.host-mode .lobby-options select{background:#fff5dd;border-color:#b8b297}
+.host-mode .room-card{background:#fff5dd;border-color:#c6b594;margin-top:16px}
+.host-mode .roster-player{background:#e3dbc2}
+.host-mode .join-announcement{left:51%;right:7%;top:14%;background:#f9ebc9;color:#273e31;font-size:clamp(17px,1.5vw,26px)}
+.host-mode .play-hud{color:#fff4d9}
+.host-mode .score-item{background:#203f36ef!important;border-color:#718169!important;border-bottom-color:var(--player-color)!important;box-shadow:0 3px 0 #0d282775!important}
+.host-mode .score-item span,.host-mode .score-item strong{color:#fff4d9!important}
+.host-mode .match-clock{color:#fff0ca;text-shadow:0 3px 1px #12312e}
+.host-mode .match-clock>strong.last-seconds{color:#ffb671}
+.host-mode .match-bottom>div{background:#173a35dc!important;color:#eadfbf;border:1px solid #8b95684d!important;box-shadow:0 2px 0 #10342e}
+.host-mode .match-bottom>.button{background:#254a40ed!important;color:#fff0d2!important;border-color:#94a07a!important;box-shadow:0 3px 0 #132f2b}
+.host-mode .event-toast{background:#233d31;color:#fff1c9;border-color:#b9a170!important;border-radius:10px}
+.host-mode .pause-panel,.host-mode .help-panel,.host-mode .result-panel,.host-mode .about-panel{color:#263c31;background:#f3e6c7;border:2px solid #b39b6b;box-shadow:0 10px 0 #14393165,0 25px 100px #051a23a6;border-radius:17px}
+.host-mode .button.primary{background:#bb743d;color:#fff6dc;box-shadow:0 4px 0 #79482a}
+.host-mode .button.secondary{background:#e1d6b6;color:#273c2e;border-color:#b4b098}
+.host-mode .settings-panel{color:#263c31;background:#f3e6c7;border:2px solid #b39b6b;box-shadow:0 10px 0 #14393165,0 25px 100px #051a2399;border-radius:17px;padding:30px 34px;width:min(470px,90vw)}
+.host-mode .settings-panel::backdrop{background:#071e28a8}
+.host-mode .settings-panel h2{font-size:36px;margin-bottom:25px}
+.host-mode .settings-panel label{display:flex;flex-direction:column;gap:10px;font-weight:800;font-size:14px}
+.host-mode .settings-panel select{min-height:48px;border-radius:8px;padding:9px;background:#fff5dd;border:1px solid #a9ad8a;color:#273c2e;font-size:14px}
+.host-mode .settings-row{display:flex;align-items:center;justify-content:space-between;margin:20px 0;font-weight:800;font-size:14px}
+.host-mode .settings-panel .small-copy{margin:16px 0 24px}
+@media(min-width:1700px){.host-mode .home-panel{width:350px}.host-mode .menu-action{min-height:74px}.host-mode .menu-action>span{font-size:28px}.host-mode .menu-action>small{font-size:12px}.host-mode .menu-footnote{font-size:11px}.host-mode .menu-utilities button{font-size:14px}}
+@media(max-height:750px) and (min-width:800px){.host-mode .home-panel{width:min(29vw,305px)}.host-mode .menu-kicker{margin-bottom:10px}.host-mode .home-panel .game-title{font-size:48px}.host-mode .menu-tagline{margin:13px 0 18px;font-size:12px}.host-mode .menu-action{min-height:61px;padding:9px 20px}.host-mode .menu-action>span{font-size:23px}.host-mode .menu-utilities{padding-top:6px}.host-mode .menu-footnote{margin-top:12px}.host-mode .lobby-panel{top:89px;padding:18px 20px;bottom:20px}.host-mode .lobby-panel h1{font-size:33px}}
+@media(max-width:1100px) and (min-width:800px){.host-mode .home-panel{left:6%;width:29vw}.host-mode .menu-action{padding-left:16px}.host-mode .menu-action>span{font-size:23px}.host-mode .lobby-panel{left:3%;width:42%}}
+@media(max-width:799px){.host-mode{overflow:auto}.host-mode #app .host-shell{min-height:680px}.host-mode .home-panel{top:50%;left:50%;transform:translate(-50%,-50%);width:min(310px,78%)}.host-mode .home-panel .game-title{font-size:47px}.host-mode .menu-kicker{font-size:8px}.host-mode .menu-action{min-height:58px}.host-mode .menu-action>span{font-size:23px}.host-mode .title-screen .host-shell:after{background:#0c2d2f95!important}.host-mode .lobby-panel{top:90px;left:5%;width:90%;bottom:26px;padding:20px}.host-mode .lobby .arena-view{left:0!important;width:100%!important}.host-mode .host-header{padding:13px 5%;height:68px}.host-mode .host-header .icon-button{font-size:8px;min-height:32px}.host-mode .host-footer>span{display:none}.host-mode .host-footer{justify-content:center}.host-mode .host-footer>div{gap:18px}.host-mode #app.match-active .host-shell{min-height:500px}.host-mode .settings-panel{padding:24px}.host-mode .join-announcement{left:6%;right:6%;top:auto;bottom:8px}}
+
+.host-mode .lobby .arena-view:after{content:'';display:block!important;position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,#234d4f,transparent 12%)}

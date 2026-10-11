@@ -15,11 +15,10 @@ describe('lagoon water', () => {
     expect(water.material.toneMapped).toBe(false);
     expect(water.material.defines.HIGH_WATER).toBe(0);
     expect(water.material.uniforms.uRadius.value).toBe(7.1);
-    expect(water.material.uniforms.uFull.value).toBe(0);
-    water.setMatchView(true);
-    expect(water.material.uniforms.uFull.value).toBe(1);
-    water.setMatchView(false);
-    expect(water.material.uniforms.uFull.value).toBe(0);
+    // The full-screen cove is opaque and occludes props or players below the surface.
+    expect(water.material.transparent).toBe(false);
+    expect(water.material.depthWrite).toBe(true);
+    expect(water.material.uniforms).not.toHaveProperty('uFull');
     free(water);
   });
 
@@ -78,7 +77,7 @@ function boardBounds(camera: PerspectiveCamera, radius: number, y = 0) {
   return { left, right, top, bottom };
 }
 
-describe('larger match view', () => {
+describe('readable match view', () => {
   for (const aspect of [16 / 9, 4 / 3, 9 / 16]) {
     it(`keeps the entire board and floating base in frame at aspect ${aspect}`, () => {
       const camera = new PerspectiveCamera(32, aspect, 0.5, 140);
@@ -94,16 +93,30 @@ describe('larger match view', () => {
       // The top of the playing field stays below the score row on a TV.
       if (aspect >= 1.6) {
         expect(floor.top).toBeLessThan(0.65);
-        expect((floor.right - floor.left) / 2).toBeGreaterThan(0.55);
+        expect((floor.right - floor.left) / 2).toBeGreaterThan(0.49);
       }
     });
   }
 
-  it('makes a wider playable board than the original TV camera, without changing the world radius', () => {
+  it('moves the title-screen diorama right of the compact menu and pulls it farther back', () => {
+    const title = new PerspectiveCamera(32, 16 / 9, 0.5, 140);
+    const normal = new PerspectiveCamera(32, 16 / 9, 0.5, 140);
+    const a = frameArena(title, 16 / 9, 7.1, false, true);
+    const b = frameArena(normal, 16 / 9, 7.1, false);
+    expect(a.position.distanceTo(a.target)).toBeGreaterThan(b.position.distanceTo(b.target));
+    expect(a.target.x).toBeLessThan(-3);
+    const board = boardBounds(title, 7.1);
+    expect(board.left).toBeGreaterThan(-0.3);
+    expect(board.right).toBeLessThan(0.96);
+  });
+
+  it('leaves scenery around the board rather than the oversized lagoon framing', () => {
     const camera = new PerspectiveCamera(32, 16 / 9, 0.5, 140);
     frameArena(camera, 16 / 9, 7.1, true);
     const b = boardBounds(camera, 7.1);
-    // The previous 720p screenshot's board was about 615px across a 1280px display.
-    expect((b.right - b.left) / 2 * 1280).toBeGreaterThan(740);
+    // The enlarged lagoon view was 757px wide; the user asked for more breathing room.
+    const width = (b.right - b.left) / 2 * 1280;
+    expect(width).toBeGreaterThan(635);
+    expect(width).toBeLessThan(710);
   });
 });

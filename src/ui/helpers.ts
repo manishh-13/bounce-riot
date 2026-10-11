@@ -36,14 +36,21 @@ export class WakeKeeper {
 }
 export function enableRemoteNavigation(scope: HTMLElement, onBack?: () => void) {
   const listener = (event: KeyboardEvent) => {
-    if (['INPUT', 'SELECT', 'TEXTAREA'].includes((event.target as HTMLElement)?.tagName)) return;
-    if (event.key === 'Escape' || event.key === 'BrowserBack') { onBack?.(); return; }
-    if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) return;
-    const elements = [...scope.querySelectorAll<HTMLElement>('button:not(:disabled), a[href], input, select')].filter(el => el.offsetParent !== null);
+    const modal = scope.querySelector<HTMLElement>('dialog[open], [role="dialog"][aria-modal="true"]:not([hidden])');
+    if (event.key === 'Escape' || event.key === 'BrowserBack') {
+      if (modal) event.preventDefault();
+      onBack?.(); return;
+    }
+    const tabInModal = event.key === 'Tab' && !!modal;
+    if (!tabInModal && ['INPUT', 'SELECT', 'TEXTAREA'].includes((event.target as HTMLElement)?.tagName)) return;
+    if (!tabInModal && !['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+    const activeScope = modal ?? scope;
+    const elements = [...activeScope.querySelectorAll<HTMLElement>('button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled)')]
+      .filter(el => el.offsetParent !== null && getComputedStyle(el).visibility !== 'hidden');
     if (!elements.length) return;
     event.preventDefault();
     const active = elements.indexOf(document.activeElement as HTMLElement);
-    const dir = event.key === 'ArrowUp' || event.key === 'ArrowLeft' ? -1 : 1;
+    const dir = tabInModal ? (event.shiftKey ? -1 : 1) : event.key === 'ArrowUp' || event.key === 'ArrowLeft' ? -1 : 1;
     elements[(active + dir + elements.length) % elements.length].focus();
   };
   scope.addEventListener('keydown', listener);

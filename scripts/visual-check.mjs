@@ -63,9 +63,12 @@ try {
       const { scene, sim } = window.__bounce;
       scene.render(sim.state, 0);
       scene.render = () => {};
-      return { ...scene.getStats(), board: scene.getBoardBounds() };
+      const pause = getComputedStyle(document.querySelector('#pause-button'));
+      return { ...scene.getStats(), board: scene.getBoardBounds(), pauseStyle: { color: pause.color, background: pause.backgroundColor, opacity: pause.opacity } };
     });
     assert.equal(await page.locator('.score-item').count(), spec.players);
+    assert.equal(stats.pauseStyle.color, 'rgb(255, 240, 210)', `${spec.name}: the Pause label must remain light on the dark HUD`);
+    assert.equal(stats.pauseStyle.opacity, '1', `${spec.name}: Pause must remain fully visible`);
     assert.deepEqual(errors, [], `${spec.name}: browser errors`);
     await page.screenshot({ path: `${output}${spec.name}.png`, timeout: 60000 });
     report.push({ ...spec, ...stats, errors });

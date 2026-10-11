@@ -53,18 +53,18 @@ export interface ArenaTheme {
 
 export const THEMES: Record<ArenaId, ArenaTheme> = {
   springyard: {
-    floorInner: '#53d3ab', floorOuter: '#24ac83', cream: '#fff4dd', line: '#e6fff1', accent: '#f35c3f', accent2: '#ffbd2d',
-    rimA: '#f4583b', rimB: '#fff0d7', frame: '#247f90', dish: '#edcea4', spring: '#f9ba28',
+    floorInner: '#508f7e', floorOuter: '#306b60', cream: '#fff4dd', line: '#e6fff1', accent: '#f35c3f', accent2: '#ffbd2d',
+    rimA: '#f4583b', rimB: '#fff0d7', frame: '#426658', dish: '#edcea4', spring: '#f9ba28',
     skyTop: '#7cc8ff', skyHorizon: '#ffe8c8', skyLow: '#ffd2b8', emblem: 'spring',
   },
   moonbounce: {
-    floorInner: '#a592ed', floorOuter: '#8066d0', cream: '#fff3e5', line: '#f5ecff', accent: '#2c91e9', accent2: '#ffcd3d',
-    rimA: '#5a71eb', rimB: '#fff0df', frame: '#ca6896', dish: '#d4c4ed', spring: '#ffc63c',
+    floorInner: '#82799e', floorOuter: '#595c82', cream: '#fff3e5', line: '#f5ecff', accent: '#2c91e9', accent2: '#ffcd3d',
+    rimA: '#5a71eb', rimB: '#fff0df', frame: '#4c526b', dish: '#d4c4ed', spring: '#ffc63c',
     skyTop: '#8aa7ff', skyHorizon: '#ffe0ef', skyLow: '#f5c9e6', emblem: 'moon',
   },
   aftershock: {
-    floorInner: '#f8b76a', floorOuter: '#e68d47', cream: '#fff3dd', line: '#fff4d9', accent: '#eb4b2f', accent2: '#354c61',
-    rimA: '#ed4c30', rimB: '#fff0d5', frame: '#355f87', dish: '#e9c397', spring: '#f79427',
+    floorInner: '#c29157', floorOuter: '#996b3e', cream: '#fff3dd', line: '#fff4d9', accent: '#eb4b2f', accent2: '#354c61',
+    rimA: '#ed4c30', rimB: '#fff0d5', frame: '#594b39', dish: '#e9c397', spring: '#f79427',
     skyTop: '#ffb27c', skyHorizon: '#ffe7c4', skyLow: '#ffc5a8', emblem: 'hazard',
   },
 };

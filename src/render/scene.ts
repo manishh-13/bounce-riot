@@ -16,7 +16,7 @@ import { WATER_LEVEL } from './water';
 
 export interface ArenaSceneOptions { reducedMotion?: boolean; quality?: Quality; }
 
-const PAGE_BG = '#f5efdf';
+const PAGE_BG = '#254d50';
 const FLOOR_EXTENT = 7.45;
 const Q = {
   high: { dprCap: 1.75, maxPixels: 1920 * 1080 * 1.6, shadows: true, shadowSize: 2048, rings: 44, segs: 120, particles: PARTICLE_POOL, floorTex: 1024 },
@@ -76,6 +76,7 @@ export class ArenaScene {
   private resizeObserver: ResizeObserver | null = null;
   private radius = 7.1;
   private matchView = false;
+  private homeView = false;
 
   constructor(private container: HTMLElement, options: ArenaSceneOptions = {}) {
     this.reducedMotion = !!options.reducedMotion;
@@ -105,17 +106,17 @@ export class ArenaScene {
 
     this.scene.fog = new Fog(PAGE_BG, 30, 62);
     // A directional toy-studio look: less flat fill preserves colour on a bright TV.
-    const hemi = new HemisphereLight('#fff6e8', '#518f80', 0.8);
+    const hemi = new HemisphereLight('#fff0d8', '#365d52', 0.64);
     const ambient = new AmbientLight('#fff6e8', 0.12);
-    this.key = new DirectionalLight('#fff6ea', 2.65);
-    this.key.position.set(-6, 15, 9);
+    this.key = new DirectionalLight('#ffe9c8', 3.0);
+    this.key.position.set(-8, 14, 6);
     this.key.target.position.set(0, 0, 0);
     const cam = this.key.shadow.camera;
     cam.left = -9.5; cam.right = 9.5; cam.top = 9.5; cam.bottom = -9.5; cam.near = 4; cam.far = 34;
     this.key.shadow.bias = -0.0006;
     this.key.shadow.normalBias = 0.03;
     this.key.shadow.radius = 3;
-    const fill = new DirectionalLight('#cce9ff', 0.7);
+    const fill = new DirectionalLight('#bcd9e6', 0.58);
     fill.position.set(9, 6, -8);
     this.scene.add(hemi, ambient, this.key, this.key.target, fill);
     if (this.resolved === 'high') this.bakeEnvironment();
@@ -147,10 +148,14 @@ export class ArenaScene {
     this.rebuildStage();
   }
 
+  setHomeView(active: boolean): void {
+    if (this.homeView === active) return;
+    this.homeView = active; this.resize();
+  }
+
   setMatchView(active: boolean): void {
     if (this.matchView === active) return;
     this.matchView = active;
-    this.stage?.setMatchView(active);
     this.resize();
   }
 
@@ -173,13 +178,13 @@ export class ArenaScene {
     this.width = w; this.height = h;
     this.applyPixelRatio();
     this.renderer.setSize(w, h, false);
-    const { position, target } = frameArena(this.camera, w / h, this.radius, this.matchView);
+    const { position, target } = frameArena(this.camera, w / h, this.radius, this.matchView, this.homeView);
     this.camBase.copy(position);
     this.camTarget.copy(target);
     const fog = this.scene.fog as Fog;
     const dist = position.distanceTo(target);
-    fog.near = dist + 25;
-    fog.far = dist + 70;
+    fog.near = dist + 8;
+    fog.far = dist + 36;
     this.particles.setViewport(h * this.renderer.getPixelRatio(), this.camera.fov);
   }
 
@@ -353,7 +358,6 @@ export class ArenaScene {
       this.disposeTree(this.stage.group);
     }
     this.stage = new Stage(themeFor(this.themeId), this.radius, this.resolved);
-    this.stage.setMatchView(this.matchView);
     this.scene.add(this.stage.group);
   }
 

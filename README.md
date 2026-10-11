@@ -4,19 +4,19 @@
 
 Open the game on a TV browser or computer, host a room, and let friends scan the QR code. Everyone sees the same arena. Hold to charge a slam, release to send a wave through the floor, and hop onto a rival's wave to turn it against them.
 
-![Bounce Riot floating lagoon arena](docs/gameplay.png)
+![Bounce Riot handcrafted cove arena](docs/gameplay.png)
 
 ## Play
 
 **[Play Bounce Riot](https://manishh-13.github.io/bounce-riot/)**
 
-1. Open the game on the big screen and choose **Host a party**.
+1. Open the game on the big screen and choose **Play** (Host a party).
 2. Put phones on the same Wi-Fi for the best chance of a direct connection.
 3. Scan the TV QR code and enter a nickname. Your phone shows your colour, number and matching mascot before you enter the controller.
 4. The first player is captain and can start the round from their phone.
 5. Left thumb moves. Tap the action button to hop. Hold and release to slam.
 
-No phone app or account is needed. Use **Try it with bots** for keyboard practice: WASD/arrows to move and Space to hop or charge. The game includes scoring, short respawns, configurable rounds, three arena variants, pause and rematches. The TV shows a floating trampoline surrounded by animated lagoon water, with a larger match view and splash effects for ring-outs.
+No phone app or account is needed. Use **Practice** (Try it with bots) for keyboard practice: WASD/arrows to move and Space to hop or charge. The game includes scoring, short respawns, configurable rounds, three arena variants, pause and rematches. The TV shows a handcrafted wooden trampoline with stitched canvas, surrounded by a rocky palm cove and animated water. A compact title menu, a little more breathing room around the board, and expressive clay-like mascots make the shared screen easier to read. Wave combat and phone controls are unchanged.
 
 ### Fullscreen phones
 
@@ -59,7 +59,7 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-The presentation checks cover all three arenas, low and high graphics, the water shader and bounded ripple pool, larger-board framing, an eight-player TV scoreboard at 720p and 1080p, and phone identity/reconnect layouts in portrait and landscape. To capture matching visual fixtures, run `node scripts/visual-check.mjs current` while Vite is running; PNGs and draw-call statistics are written to the ignored `.artifacts/polish/current/` folder. These are staged rendering fixtures, not a physical-TV benchmark.
+The presentation checks cover all three arenas, low and high graphics, the water and mascot shaders, bounded ripple pool, safe camera framing, compact-menu remote navigation and saved settings, an eight-player TV scoreboard at 720p and 1080p, and phone identity/reconnect layouts in portrait and landscape. To capture matching visual fixtures, run `node scripts/visual-check.mjs current` while Vite is running; PNGs and draw-call statistics are written to the ignored `.artifacts/polish/current/` folder. These are staged rendering fixtures, not a physical-TV benchmark.
 
 On macOS the browser tests use an existing Google Chrome installation by default. Set `CHROME_PATH` to choose a different executable. In CI, Playwright's Chromium is installed. Tests cover deterministic simulation and room-service rules, plus browser gameplay, actual direct controller pairing, relay fallback, captain start, reconnect and rematch.
 

@@ -26,7 +26,7 @@ test('homepage is a rendered 3D game with keyboard-accessible actions', async ({
   const errors: string[] = [];
   page.on('pageerror', e => errors.push(e.message));
   await page.goto(gameUrl());
-  await expect(page.getByRole('heading', { name: /Good friends/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Bounce Riot', exact: true })).toBeVisible();
   await expect(page.locator('#arena-view canvas')).toBeVisible();
   await expect(page.getByRole('button', { name: /Host a party/ })).toBeVisible();
   await page.getByRole('button', { name: /Try it with bots/ }).focus();
